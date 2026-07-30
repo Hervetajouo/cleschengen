@@ -1360,6 +1360,10 @@ export default function CleSchengen() {
                   Créer un compte
                 </button>
               </div>
+            ) : !profile ? (
+              <div className="mt-4 flex items-center justify-center gap-2 py-16 text-sm" style={{ color: C.slate }}>
+                <Loader2 size={16} className="animate-spin" /> Chargement de ton compte…
+              </div>
             ) : !isVerifiedLandlord ? (
               <div className="mt-4">
                 <VerificationGate
