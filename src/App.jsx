@@ -815,44 +815,27 @@ function AuthModal({ mode: initialMode, onClose }) {
   );
 }
 
-/* ---------- Email code verification (free, unlimited, native Supabase Auth — no third party) ---------- */
+/* ---------- Email link verification (free, unlimited, native Supabase Auth — click the link, no SMTP setup needed) ---------- */
 function EmailVerification({ email, onVerified }) {
-  const [code, setCode] = useState("");
-  const [stage, setStage] = useState("intro"); // intro | enter-code
+  const [stage, setStage] = useState("intro"); // intro | sent
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
 
-  async function sendCode() {
+  async function sendLink() {
     setError("");
     setBusy(true);
     try {
       const { error: err } = await supabase.auth.signInWithOtp({
         email,
-        options: { shouldCreateUser: false },
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}${window.location.pathname}?verify_email=1`,
+        },
       });
       if (err) throw err;
-      setStage("enter-code");
-      setNotice(`Un code à 6 chiffres a été envoyé à ${email}.`);
+      setStage("sent");
     } catch (err) {
-      setError(err.message || "Échec de l'envoi du code, réessaie.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function checkCode() {
-    setError("");
-    if (!code.trim()) { setError("Entre le code reçu par e-mail."); return; }
-    setBusy(true);
-    try {
-      const { error: err } = await supabase.auth.verifyOtp({ email, token: code.trim(), type: "email" });
-      if (err) throw err;
-      const { error: rpcErr } = await supabase.rpc("mark_email_verified");
-      if (rpcErr) throw rpcErr;
-      onVerified();
-    } catch (err) {
-      setError(err.message || "Code incorrect ou expiré.");
+      setError(err.message || "Échec de l'envoi de l'e-mail, réessaie.");
     } finally {
       setBusy(false);
     }
@@ -865,41 +848,29 @@ function EmailVerification({ email, onVerified }) {
         <h3 className="text-base font-semibold" style={{ fontFamily: "'Fraunces', serif" }}>Vérification par e-mail</h3>
       </div>
       <p className="mt-2 text-sm" style={{ color: C.slate }}>
-        Avant d'envoyer ta pièce d'identité, confirme que tu as bien accès à ton adresse <strong>{email}</strong> en
-        saisissant le code qu'on va t'envoyer. Cette étape évite les faux comptes créés automatiquement.
+        Avant d'envoyer ta pièce d'identité, confirme que tu as bien accès à <strong>{email}</strong>. Cette étape
+        évite les faux comptes créés automatiquement.
       </p>
 
       {stage === "intro" && (
         <>
           {error && <p className="mt-2 text-xs" style={{ color: C.rust }}>{error}</p>}
-          <button disabled={busy} onClick={sendCode}
+          <button disabled={busy} onClick={sendLink}
             className="clesch-focus mt-3 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
             style={{ background: C.ink }}>
-            {busy ? <Loader2 size={16} className="animate-spin" /> : "Envoyer le code par e-mail"}
+            {busy ? <Loader2 size={16} className="animate-spin" /> : "Envoyer le lien de confirmation"}
           </button>
         </>
       )}
 
-      {stage === "enter-code" && (
-        <>
-          {notice && <p className="mt-3 text-xs" style={{ color: C.slate }}>{notice}</p>}
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="Code reçu par e-mail"
-            className="clesch-focus mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none"
-            style={{ borderColor: C.line }}
-          />
-          {error && <p className="mt-2 text-xs" style={{ color: C.rust }}>{error}</p>}
-          <button disabled={busy} onClick={checkCode}
-            className="clesch-focus mt-3 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-            style={{ background: C.gold }}>
-            {busy ? <Loader2 size={16} className="animate-spin" /> : "Confirmer le code"}
+      {stage === "sent" && (
+        <div className="mt-3 rounded-lg p-3 text-sm" style={{ background: "#EAF3EE", color: C.green }}>
+          <CheckCircle2 size={16} className="mb-1" /> Un e-mail a été envoyé à {email}. Ouvre-le et clique sur le
+          lien de confirmation — cette page se mettra à jour automatiquement dès que ce sera fait.
+          <button onClick={sendLink} className="clesch-focus mt-2 flex text-xs underline" style={{ color: C.green }}>
+            Renvoyer l'e-mail
           </button>
-          <button onClick={sendCode} className="clesch-focus mt-2 flex text-xs" style={{ color: C.slate }}>
-            Renvoyer le code
-          </button>
-        </>
+        </div>
       )}
     </div>
   );
@@ -1197,6 +1168,19 @@ export default function CleSchengen() {
       return () => clearInterval(interval);
     }
   }, [session, loadUnlocks]);
+
+  /* ---- Handle the return from the email verification link ---- */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("verify_email") !== "1") return;
+    if (!session?.user?.id) return;
+    (async () => {
+      await supabase.rpc("mark_email_verified");
+      await loadProfile(session.user.id);
+      window.history.replaceState({}, "", window.location.pathname);
+      setTab("add");
+    })();
+  }, [session, loadProfile]);
 
   async function handleAddListing(listing) {
     setSaving(true);
