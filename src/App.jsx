@@ -815,8 +815,98 @@ function AuthModal({ mode: initialMode, onClose }) {
   );
 }
 
+/* ---------- Email code verification (free, unlimited, native Supabase Auth — no third party) ---------- */
+function EmailVerification({ email, onVerified }) {
+  const [code, setCode] = useState("");
+  const [stage, setStage] = useState("intro"); // intro | enter-code
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  async function sendCode() {
+    setError("");
+    setBusy(true);
+    try {
+      const { error: err } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false },
+      });
+      if (err) throw err;
+      setStage("enter-code");
+      setNotice(`Un code à 6 chiffres a été envoyé à ${email}.`);
+    } catch (err) {
+      setError(err.message || "Échec de l'envoi du code, réessaie.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function checkCode() {
+    setError("");
+    if (!code.trim()) { setError("Entre le code reçu par e-mail."); return; }
+    setBusy(true);
+    try {
+      const { error: err } = await supabase.auth.verifyOtp({ email, token: code.trim(), type: "email" });
+      if (err) throw err;
+      const { error: rpcErr } = await supabase.rpc("mark_email_verified");
+      if (rpcErr) throw rpcErr;
+      onVerified();
+    } catch (err) {
+      setError(err.message || "Code incorrect ou expiré.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl p-6" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+      <div className="flex items-center gap-2" style={{ color: C.ink }}>
+        <Mail size={18} />
+        <h3 className="text-base font-semibold" style={{ fontFamily: "'Fraunces', serif" }}>Vérification par e-mail</h3>
+      </div>
+      <p className="mt-2 text-sm" style={{ color: C.slate }}>
+        Avant d'envoyer ta pièce d'identité, confirme que tu as bien accès à ton adresse <strong>{email}</strong> en
+        saisissant le code qu'on va t'envoyer. Cette étape évite les faux comptes créés automatiquement.
+      </p>
+
+      {stage === "intro" && (
+        <>
+          {error && <p className="mt-2 text-xs" style={{ color: C.rust }}>{error}</p>}
+          <button disabled={busy} onClick={sendCode}
+            className="clesch-focus mt-3 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            style={{ background: C.ink }}>
+            {busy ? <Loader2 size={16} className="animate-spin" /> : "Envoyer le code par e-mail"}
+          </button>
+        </>
+      )}
+
+      {stage === "enter-code" && (
+        <>
+          {notice && <p className="mt-3 text-xs" style={{ color: C.slate }}>{notice}</p>}
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder="Code reçu par e-mail"
+            className="clesch-focus mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none"
+            style={{ borderColor: C.line }}
+          />
+          {error && <p className="mt-2 text-xs" style={{ color: C.rust }}>{error}</p>}
+          <button disabled={busy} onClick={checkCode}
+            className="clesch-focus mt-3 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            style={{ background: C.gold }}>
+            {busy ? <Loader2 size={16} className="animate-spin" /> : "Confirmer le code"}
+          </button>
+          <button onClick={sendCode} className="clesch-focus mt-2 flex text-xs" style={{ color: C.slate }}>
+            Renvoyer le code
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ---------- Identity verification gate for landlords/sellers ---------- */
-function VerificationGate({ profile, userId, onUpgradeRequested, onSubmitted }) {
+function VerificationGate({ profile, userId, userEmail, onUpgradeRequested, onSubmitted, onEmailVerified }) {
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -838,6 +928,10 @@ function VerificationGate({ profile, userId, onUpgradeRequested, onSubmitted }) 
         </button>
       </div>
     );
+  }
+
+  if (!profile.email_verified) {
+    return <EmailVerification email={userEmail} onVerified={onEmailVerified} />;
   }
 
   if (profile.verification_status === "pending") {
@@ -1287,8 +1381,10 @@ export default function CleSchengen() {
                 <VerificationGate
                   profile={profile}
                   userId={session.user.id}
+                  userEmail={session.user.email}
                   onUpgradeRequested={async () => { await supabase.rpc("request_bailleur_upgrade"); await loadProfile(session.user.id); }}
                   onSubmitted={() => loadProfile(session.user.id)}
+                  onEmailVerified={() => loadProfile(session.user.id)}
                 />
               </div>
             ) : (
