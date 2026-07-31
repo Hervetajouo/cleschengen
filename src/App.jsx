@@ -1257,18 +1257,175 @@ function ContactModal({ defaultEmail, onClose, lang }) {
 }
 
 /* ---------- Owner dashboard (views + unlocks per listing) ---------- */
+/* ---------- Edit an existing listing (owner only) ---------- */
+function EditListingModal({ listing, onClose, onSaved, lang }) {
+  const [form, setForm] = useState({
+    type: listing.type, transaction: listing.transaction, country: listing.country,
+    city: listing.city, neighborhood: listing.neighborhood || "", price: listing.price,
+    desc: listing.description,
+  });
+  const [photos, setPhotos] = useState(listing.photos || []);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+  const fileInputRef = useRef(null);
+
+  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+
+  async function handlePhotoFiles(fileList) {
+    const files = Array.from(fileList).slice(0, MAX_PHOTOS - photos.length);
+    if (files.length === 0) return;
+    setPhotoBusy(true);
+    try {
+      const next = [];
+      for (const file of files) {
+        if (!file.type.startsWith("image/")) continue;
+        next.push(await resizeImageFile(file));
+      }
+      setPhotos((p) => [...p, ...next].slice(0, MAX_PHOTOS));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+  function removePhoto(i) { setPhotos((p) => p.filter((_, idx) => idx !== i)); }
+
+  async function save() {
+    setSaving(true);
+    setError("");
+    try {
+      const { error: err } = await supabase.from("listings").update({
+        type: form.type, transaction: form.transaction, country: form.country,
+        city: form.city, neighborhood: form.neighborhood, price: Number(form.price),
+        description: form.desc, photos,
+      }).eq("id", listing.id);
+      if (err) throw err;
+      setSaved(true);
+      onSaved();
+    } catch (err) {
+      setError(err.message || t(lang, "edit_error"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.4)" }} onClick={onClose}>
+      <div className="w-full max-w-lg overflow-y-auto rounded-2xl p-6 shadow-xl" style={{ background: C.card, maxHeight: "90vh" }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "edit_title")}</h3>
+          <button onClick={onClose} className="clesch-focus" style={{ color: C.slate }}><X size={18} /></button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_type")}</label>
+            <Select value={form.type} onChange={(e) => set("type", e.target.value)}>
+              {Object.keys(TYPES).map((k) => <option key={k} value={k}>{t(lang, `type_${k}`)}</option>)}
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_transaction")}</label>
+            <Select value={form.transaction} onChange={(e) => set("transaction", e.target.value)}>
+              {Object.keys(TRANSACTIONS).map((k) => <option key={k} value={k}>{t(lang, `trans_${k}`)}</option>)}
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_country")}</label>
+            <Select value={form.country} onChange={(e) => set("country", e.target.value)}>
+              {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_city")}</label>
+            <input value={form.city} onChange={(e) => set("city", e.target.value)}
+              className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+          </div>
+          <div>
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_neighborhood")}</label>
+            <input value={form.neighborhood} onChange={(e) => set("neighborhood", e.target.value)}
+              className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+          </div>
+          <div>
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_price")}</label>
+            <input type="number" min="0" value={form.price} onChange={(e) => set("price", e.target.value)}
+              className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+          </div>
+          <div className="col-span-2">
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_description")}</label>
+            <textarea value={form.desc} onChange={(e) => set("desc", e.target.value)} rows={3}
+              className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+          </div>
+          <div className="col-span-2">
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_photos")}</label>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {photos.map((p, i) => (
+                <div key={i} className="relative h-16 w-16">
+                  <img src={p} alt="" className="h-16 w-16 rounded-lg object-cover" style={{ border: `1px solid ${C.line}` }} />
+                  <button onClick={() => removePhoto(i)} className="clesch-focus absolute -right-1.5 -top-1.5 rounded-full p-0.5" style={{ background: C.rust }}>
+                    <Trash2 size={11} color="white" />
+                  </button>
+                </div>
+              ))}
+              {photos.length < MAX_PHOTOS && (
+                <button onClick={() => fileInputRef.current?.click()} disabled={photoBusy}
+                  className="clesch-focus flex h-16 w-16 flex-col items-center justify-center gap-1 rounded-lg text-xs"
+                  style={{ border: `1px dashed ${C.line}`, color: C.slate, background: C.paper }}>
+                  {photoBusy ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} />}
+                  {t(lang, "add_photos_add")}
+                </button>
+              )}
+              <input ref={fileInputRef} type="file" accept="image/*" multiple hidden
+                onChange={(e) => { handlePhotoFiles(e.target.files); e.target.value = ""; }} />
+            </div>
+          </div>
+        </div>
+
+        {error && <p className="mt-3 text-xs" style={{ color: C.rust }}>{error}</p>}
+        {saved && <p className="mt-3 text-xs" style={{ color: C.green }}>{t(lang, "edit_saved")}</p>}
+
+        <div className="mt-4 flex gap-2">
+          <button disabled={saving} onClick={save}
+            className="clesch-focus flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            style={{ background: C.ink }}>
+            {saving ? <Loader2 size={16} className="animate-spin" /> : t(lang, "edit_save")}
+          </button>
+          <button onClick={onClose} className="clesch-focus rounded-lg px-4 py-2.5 text-sm font-semibold" style={{ border: `1px solid ${C.line}`, color: C.ink }}>
+            {t(lang, "edit_cancel")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function OwnerDashboard({ lang }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null); // full listing row being edited, or null
+  const [deletingId, setDeletingId] = useState(null);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const { data } = await supabase.rpc("my_listings_with_stats");
-      setRows(data || []);
-      setLoading(false);
-    })();
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.rpc("my_listings_with_stats");
+    setRows(data || []);
+    setLoading(false);
   }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function openEdit(id) {
+    const { data } = await supabase.from("listings").select("*").eq("id", id).single();
+    if (data) setEditing(data);
+  }
+
+  async function deleteRow(id) {
+    if (!window.confirm(t(lang, "dash_delete_confirm"))) return;
+    setDeletingId(id);
+    await supabase.from("listings").delete().eq("id", id);
+    setDeletingId(null);
+    load();
+  }
 
   return (
     <div>
@@ -1293,6 +1450,7 @@ function OwnerDashboard({ lang }) {
                 <th className="px-4 py-2.5 text-right font-medium">{t(lang, "dash_col_price")}</th>
                 <th className="px-4 py-2.5 text-right font-medium">{t(lang, "dash_col_views")}</th>
                 <th className="px-4 py-2.5 text-right font-medium">{t(lang, "dash_col_unlocks")}</th>
+                <th className="px-4 py-2.5 text-right font-medium">{t(lang, "dash_col_actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -1307,11 +1465,31 @@ function OwnerDashboard({ lang }) {
                   <td className="px-4 py-2.5 text-right" style={{ color: C.ink }}>{formatPrice(r.price)} €</td>
                   <td className="px-4 py-2.5 text-right" style={{ color: C.ink }}>{r.views_count}</td>
                   <td className="px-4 py-2.5 text-right font-semibold" style={{ color: C.green }}>{r.unlocks_count}</td>
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => openEdit(r.id)} className="clesch-focus rounded-lg border px-2.5 py-1 text-xs font-medium" style={{ borderColor: C.line, color: C.ink }}>
+                        {t(lang, "dash_edit")}
+                      </button>
+                      <button disabled={deletingId === r.id} onClick={() => deleteRow(r.id)}
+                        className="clesch-focus flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-white disabled:opacity-60" style={{ background: C.rust }}>
+                        <Trash2 size={12} /> {t(lang, "dash_delete")}
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      )}
+
+      {editing && (
+        <EditListingModal
+          listing={editing}
+          lang={lang}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); load(); }}
+        />
       )}
     </div>
   );

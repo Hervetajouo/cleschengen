@@ -135,6 +135,10 @@ const fr = {
   dash_title: "Mes annonces", dash_subtitle: "Vues et déblocages de tes annonces publiées.",
   dash_loading: "Chargement…", dash_empty: "Tu n'as encore publié aucune annonce.",
   dash_col_listing: "Annonce", dash_col_views: "Vues", dash_col_unlocks: "Contacts débloqués", dash_col_price: "Prix",
+  dash_col_actions: "Actions", dash_edit: "Modifier", dash_delete: "Supprimer",
+  dash_delete_confirm: "Supprimer définitivement cette annonce ?",
+  edit_title: "Modifier l'annonce", edit_save: "Enregistrer les modifications", edit_saving: "Enregistrement…",
+  edit_saved: "Modifications enregistrées.", edit_error: "Échec de l'enregistrement, réessaie.", edit_cancel: "Annuler",
 };
 
 const en = {
@@ -264,6 +268,10 @@ const en = {
   dash_title: "My listings", dash_subtitle: "Views and unlocks for your published listings.",
   dash_loading: "Loading…", dash_empty: "You haven't published any listing yet.",
   dash_col_listing: "Listing", dash_col_views: "Views", dash_col_unlocks: "Contacts unlocked", dash_col_price: "Price",
+  dash_col_actions: "Actions", dash_edit: "Edit", dash_delete: "Delete",
+  dash_delete_confirm: "Permanently delete this listing?",
+  edit_title: "Edit listing", edit_save: "Save changes", edit_saving: "Saving…",
+  edit_saved: "Changes saved.", edit_error: "Failed to save, try again.", edit_cancel: "Cancel",
 };
 
 export const translations = { fr, en };
