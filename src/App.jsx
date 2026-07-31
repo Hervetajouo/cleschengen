@@ -1129,6 +1129,12 @@ function ContactModal({ defaultEmail, onClose }) {
         message: message.trim(),
       });
       if (err) throw err;
+      // La sauvegarde du message est ce qui compte le plus : si l'e-mail de
+      // notification échoue, le message reste quand même visible dans le
+      // panneau admin, donc on n'échoue pas toute la soumission pour ça.
+      supabase.functions.invoke("notify-contact-message", {
+        body: { email: email.trim(), message: message.trim() },
+      }).catch(() => {});
       setSent(true);
     } catch (err) {
       setError(err.message || "Échec de l'envoi, réessaie.");
