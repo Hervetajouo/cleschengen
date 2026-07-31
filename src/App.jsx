@@ -56,6 +56,11 @@ const TRANSACTIONS = {
   vente: { label: "Vente", unit: { maison: "", chambre: "", voiture: "", appareils: "" } },
 };
 
+function priceUnit(lang, transaction, type) {
+  if (transaction === "vente") return "";
+  return type === "voiture" || type === "appareils" ? t(lang, "unit_day") : t(lang, "unit_month");
+}
+
 const UNLOCK_FEE = 2.99;
 
 
@@ -153,7 +158,7 @@ function Select({ value, onChange, children }) {
 /* ---------- Ticket-style listing card ---------- */
 function ListingCard({ listing, unlocked, onOpen, lang }) {
   const TypeIcon = TYPES[listing.type].icon;
-  const unit = TRANSACTIONS[listing.transaction].unit[listing.type];
+  const unit = priceUnit(lang, listing.transaction, listing.type);
   const cover = listing.photos && listing.photos[0];
   return (
     <div className="relative flex overflow-hidden rounded-xl shadow-sm transition hover:shadow-md" style={{ background: C.card, border: `1px solid ${C.line}` }}>
@@ -196,7 +201,7 @@ function ListingCard({ listing, unlocked, onOpen, lang }) {
         </div>
 
         <p className="mt-1 tracking-wide" style={{ fontFamily: "'IBM Plex Mono', monospace", color: C.slate, fontSize: "11px" }}>
-          RÉF. {listing.id}
+          {t(lang, "modal_ref")} {listing.id}
         </p>
       </div>
 
@@ -226,7 +231,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
   const [error, setError] = useState("");
 
   const TypeIcon = TYPES[listing.type].icon;
-  const unit = TRANSACTIONS[listing.transaction].unit[listing.type];
+  const unit = priceUnit(lang, listing.transaction, listing.type);
 
   async function startCheckout() {
     if (!session) {
@@ -276,7 +281,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
             </div>
           ) : (
             <div className="mb-4 flex h-32 items-center justify-center gap-2 rounded-lg text-xs" style={{ background: C.paper, border: `1px dashed ${C.line}`, color: C.slate }}>
-              <ImageOff size={16} /> Aucune photo fournie pour cette annonce
+              <ImageOff size={16} /> {t(lang, "modal_no_photo")}
             </div>
           )}
 
@@ -286,12 +291,12 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
             </h3>
             {listing.verified && (
               <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: "#EAF3EE", color: C.green }}>
-                <BadgeCheck size={12} /> Propriétaire vérifié
+                <BadgeCheck size={12} /> {t(lang, "modal_verified_badge")}
               </span>
             )}
           </div>
           <p className="mt-1 flex items-center gap-1 text-xs" style={{ fontFamily: "'IBM Plex Mono', monospace", color: C.slate }}>
-            RÉF. {listing.id}
+            {t(lang, "modal_ref")} {listing.id}
           </p>
 
           <p className="mt-3 text-sm leading-relaxed" style={{ color: C.ink }}>{listing.desc}</p>
@@ -323,7 +328,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
                 <KeyRound size={16} /> {t(lang, "modal_unlock_button")} — {UNLOCK_FEE.toFixed(2)} €
               </button>
               {!session && (
-                <p className="mt-2 text-xs" style={{ color: C.slate }}>Un compte est nécessaire pour payer et retrouver ce contact ensuite.</p>
+                <p className="mt-2 text-xs" style={{ color: C.slate }}>{t(lang, "modal_account_required")}</p>
               )}
             </div>
           )}
@@ -354,7 +359,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
                 <Phone size={15} /> {t(lang, "modal_call")} {listing.owner.split(" ")[0]}
               </a>
               <p className="mt-3 flex items-center gap-1.5 text-xs" style={{ color: C.slate }}>
-                <Info size={12} /> Retrouve ce contact dans l'onglet « Mes contacts », même après avoir fermé l'application.
+                <Info size={12} /> {t(lang, "modal_history_hint")}
               </p>
             </div>
           )}
@@ -494,17 +499,17 @@ function AddListingForm({ onSubmit, saving, lang }) {
     <div className="mx-auto max-w-lg">
       <h2 className="text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "add_form_title")}</h2>
       <p className="mt-1 text-sm" style={{ color: C.slate }}>
-        Ton numéro reste masqué sur la plateforme. Il n'est révélé qu'aux personnes ayant payé pour le débloquer.
+        {t(lang, "add_form_subtitle")}
       </p>
 
       {success && (
         <div className="mt-4 flex items-center gap-2 rounded-lg p-3 text-sm" style={{ background: "#EAF3EE", color: C.green }}>
-          <CheckCircle2 size={16} /> Annonce publiée avec la référence <strong>&nbsp;{success}</strong>. Retrouve-la dans « Rechercher ».
+          <CheckCircle2 size={16} /> {t(lang, "add_success_prefix")} <strong>&nbsp;{success}</strong>. {t(lang, "add_success_suffix")}
         </div>
       )}
       {saveError && (
         <div className="mt-4 rounded-lg p-3 text-sm" style={{ background: "#F7EAE6", color: C.rust }}>
-          La sauvegarde a échoué — vérifie ta connexion et réessaie. Ton annonce n'a pas été publiée.
+          {t(lang, "add_save_error")}
         </div>
       )}
 
@@ -513,7 +518,7 @@ function AddListingForm({ onSubmit, saving, lang }) {
           <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_owner_name")}</label>
           <input value={form.owner} onChange={(e) => set("owner", e.target.value)}
             className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
-            style={{ borderColor: errors.owner ? C.rust : C.line }} placeholder="Nom et prénom" />
+            style={{ borderColor: errors.owner ? C.rust : C.line }} placeholder={t(lang, "add_owner_name_ph")} />
           {errors.owner && <p className="mt-1 text-xs" style={{ color: C.rust }}>{errors.owner}</p>}
         </div>
 
@@ -550,7 +555,7 @@ function AddListingForm({ onSubmit, saving, lang }) {
           <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_city")}</label>
           <input value={form.city} onChange={(e) => set("city", e.target.value)}
             className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
-            style={{ borderColor: errors.city ? C.rust : C.line }} placeholder="ex. Lyon" />
+            style={{ borderColor: errors.city ? C.rust : C.line }} placeholder={t(lang, "add_city_ph")} />
           {errors.city && <p className="mt-1 text-xs" style={{ color: C.rust }}>{errors.city}</p>}
         </div>
 
@@ -558,17 +563,17 @@ function AddListingForm({ onSubmit, saving, lang }) {
           <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_neighborhood")}</label>
           <input value={form.neighborhood} onChange={(e) => set("neighborhood", e.target.value)}
             className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
-            style={{ borderColor: errors.neighborhood ? C.rust : C.line }} placeholder="ex. Croix-Rousse" />
+            style={{ borderColor: errors.neighborhood ? C.rust : C.line }} placeholder={t(lang, "add_neighborhood_ph")} />
           {errors.neighborhood && <p className="mt-1 text-xs" style={{ color: C.rust }}>{errors.neighborhood}</p>}
         </div>
 
         <div className="col-span-2">
           <label className="text-xs font-medium" style={{ color: C.slate }}>
-            Prix (€ {TRANSACTIONS[form.transaction].unit[form.type] || "total"})
+            {t(lang, "add_price")} (€ {priceUnit(lang, form.transaction, form.type) || t(lang, "add_price_total")})
           </label>
           <input type="number" min="0" value={form.price} onChange={(e) => set("price", e.target.value)}
             className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
-            style={{ borderColor: errors.price ? C.rust : C.line }} placeholder="ex. 850" />
+            style={{ borderColor: errors.price ? C.rust : C.line }} placeholder={t(lang, "add_price_ph")} />
           {errors.price && <p className="mt-1 text-xs" style={{ color: C.rust }}>{errors.price}</p>}
         </div>
 
@@ -576,7 +581,7 @@ function AddListingForm({ onSubmit, saving, lang }) {
           <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_description")}</label>
           <textarea value={form.desc} onChange={(e) => set("desc", e.target.value)} rows={3}
             className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
-            style={{ borderColor: errors.desc ? C.rust : C.line }} placeholder="Décris le bien, sa disponibilité, ses conditions…" />
+            style={{ borderColor: errors.desc ? C.rust : C.line }} placeholder={t(lang, "add_description_ph")} />
           {errors.desc && <p className="mt-1 text-xs" style={{ color: C.rust }}>{errors.desc}</p>}
         </div>
 
@@ -607,7 +612,7 @@ function AddListingForm({ onSubmit, saving, lang }) {
               onChange={(e) => { handlePhotoFiles(e.target.files); e.target.value = ""; }} />
           </div>
           <p className="mt-1 text-xs" style={{ color: C.slate }}>
-            Les photos sont compressées automatiquement pour rester légères. Formats JPG/PNG.
+            {t(lang, "add_photos_note")}
           </p>
           {photoError && <p className="mt-1 text-xs" style={{ color: C.rust }}>{photoError}</p>}
         </div>
@@ -620,29 +625,29 @@ function AddListingForm({ onSubmit, saving, lang }) {
 
           {verified ? (
             <p className="mt-2 flex items-center gap-1.5 text-sm" style={{ color: C.green }}>
-              <BadgeCheck size={15} /> Numéro vérifié — ton annonce portera le badge « Propriétaire vérifié ».
+              <BadgeCheck size={15} /> {t(lang, "add_phone_verified")}
             </p>
           ) : (
             <>
               <p className="mt-1 text-xs" style={{ color: C.slate }}>
-                Confirme que tu es bien joignable à ce numéro avant de publier.
+                {t(lang, "add_phone_confirm_note")}
               </p>
               {!otpSent ? (
                 <button onClick={sendOtp} className="clesch-focus mt-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-white" style={{ background: C.ink }}>
-                  Envoyer un code par SMS
+                  {t(lang, "add_phone_send_code")}
                 </button>
               ) : (
                 <div className="mt-2">
                   <p className="rounded-md p-2 text-xs" style={{ background: "#FFF7E8", color: "#8a6a2f" }}>
-                    Code envoyé (démo) : <strong>{otpCode}</strong> — en production, ce code serait envoyé par SMS via un vrai prestataire (Twilio, Vonage…), jamais affiché à l'écran.
+                    {t(lang, "add_phone_demo_note", { code: otpCode })}
                   </p>
                   <div className="mt-2 flex gap-2">
-                    <input value={otpInput} onChange={(e) => setOtpInput(e.target.value)} placeholder="Code reçu"
+                    <input value={otpInput} onChange={(e) => setOtpInput(e.target.value)} placeholder={t(lang, "add_phone_code_ph")}
                       className="clesch-focus w-28 rounded-lg border px-3 py-1.5 text-sm outline-none" style={{ borderColor: C.line }} />
                     <button onClick={confirmOtp} className="clesch-focus rounded-lg px-3 py-1.5 text-xs font-semibold text-white" style={{ background: C.gold }}>
-                      Confirmer
+                      {t(lang, "add_phone_confirm")}
                     </button>
-                    <button onClick={sendOtp} className="clesch-focus text-xs" style={{ color: C.slate }}>Renvoyer</button>
+                    <button onClick={sendOtp} className="clesch-focus text-xs" style={{ color: C.slate }}>{t(lang, "add_phone_resend")}</button>
                   </div>
                   {otpError && <p className="mt-1 text-xs" style={{ color: C.rust }}>{otpError}</p>}
                 </div>
@@ -653,8 +658,8 @@ function AddListingForm({ onSubmit, saving, lang }) {
 
         {/* Anti-robot check */}
         <div className="col-span-2 rounded-lg p-3.5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
-          <p className="text-sm font-medium" style={{ color: C.ink }}>Vérification anti-robot</p>
-          <p className="mt-1 text-xs" style={{ color: C.slate }}>Recopie le code affiché pour confirmer que tu n'es pas un robot.</p>
+          <p className="text-sm font-medium" style={{ color: C.ink }}>{t(lang, "add_captcha_label")}</p>
+          <p className="mt-1 text-xs" style={{ color: C.slate }}>{t(lang, "add_captcha_note")}</p>
           <div className="mt-2 flex items-center gap-2">
             <span
               className="select-none rounded-lg px-4 py-2 text-lg font-bold tracking-[0.3em]"
@@ -669,7 +674,7 @@ function AddListingForm({ onSubmit, saving, lang }) {
           <input
             value={captchaInput}
             onChange={(e) => setCaptchaInput(e.target.value)}
-            placeholder="Recopie le code ci-dessus"
+            placeholder={t(lang, "add_captcha_ph")}
             className="clesch-focus mt-2 w-full max-w-xs rounded-lg border px-3 py-2 text-sm uppercase outline-none"
             style={{ borderColor: C.line }}
           />
@@ -682,7 +687,7 @@ function AddListingForm({ onSubmit, saving, lang }) {
         className="clesch-focus mt-4 flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white"
         style={{ background: C.ink, opacity: saving ? 0.6 : 1 }}>
         {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-        {saving ? "…" : t(lang, "add_submit")}
+        {saving ? t(lang, "add_submitting") : t(lang, "add_submit")}
       </button>
     </div>
   );
@@ -691,9 +696,9 @@ function AddListingForm({ onSubmit, saving, lang }) {
 /* ---------- Dedicated onboarding tab ---------- */
 function HowItWorks({ goTo, lang }) {
   const steps = [
-    { n: "01", title: t(lang, "how_step1_title"), body: "Le propriétaire d'une maison, d'une chambre ou d'une voiture dépose son annonce : ville, pays de l'espace Schengen, prix et description. Son numéro reste masqué." },
-    { n: "02", title: t(lang, "how_step2_title"), body: "Une personne intéressée filtre les annonces par type, transaction et pays, puis ouvre celle qui lui convient. Le contact du propriétaire reste scellé tant qu'il n'a pas payé." },
-    { n: "03", title: t(lang, "how_step3_title"), body: `En réglant ${UNLOCK_FEE.toFixed(2)} € de frais de mise en relation, le nom et le numéro du propriétaire sont débloqués immédiatement, pour appeler et décider soi-même.` },
+    { n: "01", title: t(lang, "how_step1_title"), body: t(lang, "how_step1_body") },
+    { n: "02", title: t(lang, "how_step2_title"), body: t(lang, "how_step2_body") },
+    { n: "03", title: t(lang, "how_step3_title"), body: t(lang, "how_step3_body", { fee: UNLOCK_FEE.toFixed(2) }) },
   ];
   return (
     <div>
@@ -752,7 +757,7 @@ function AuthModal({ mode: initialMode, onClose, lang }) {
           options: { data: { role } },
         });
         if (err) throw err;
-        setNotice("Compte créé. Si la confirmation par e-mail est activée, vérifie ta boîte mail avant de te connecter.");
+        setNotice(t(lang, "auth_signup_notice"));
         setMode("login");
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password });
@@ -796,7 +801,7 @@ function AuthModal({ mode: initialMode, onClose, lang }) {
 
           {mode === "signup" && (
             <div>
-              <label className="text-xs font-medium" style={{ color: C.slate }}>Je suis…</label>
+              <label className="text-xs font-medium" style={{ color: C.slate }}>{lang === "en" ? "I am…" : "Je suis…"}</label>
               <div className="mt-1 grid grid-cols-2 gap-2">
                 <button type="button" onClick={() => setRole("chercheur")}
                   className="clesch-focus rounded-lg border px-3 py-2 text-sm font-medium"
@@ -811,7 +816,7 @@ function AuthModal({ mode: initialMode, onClose, lang }) {
               </div>
               {role === "bailleur" && (
                 <p className="mt-1.5 text-xs" style={{ color: C.slate }}>
-                  Une vérification d'identité sera demandée avant de pouvoir publier une annonce.
+                  {t(lang, "auth_role_note")}
                 </p>
               )}
             </div>
@@ -840,7 +845,7 @@ function AuthModal({ mode: initialMode, onClose, lang }) {
 }
 
 /* ---------- Email link verification (free, unlimited, native Supabase Auth — click the link, no SMTP setup needed) ---------- */
-function EmailVerification({ email, onVerified }) {
+function EmailVerification({ email, onVerified, lang }) {
   const [stage, setStage] = useState("intro"); // intro | sent
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -859,7 +864,7 @@ function EmailVerification({ email, onVerified }) {
       if (err) throw err;
       setStage("sent");
     } catch (err) {
-      setError(err.message || "Échec de l'envoi de l'e-mail, réessaie.");
+      setError(err.message || t(lang, "ev_error"));
     } finally {
       setBusy(false);
     }
@@ -869,11 +874,10 @@ function EmailVerification({ email, onVerified }) {
     <div className="rounded-xl p-6" style={{ background: C.card, border: `1px solid ${C.line}` }}>
       <div className="flex items-center gap-2" style={{ color: C.ink }}>
         <Mail size={18} />
-        <h3 className="text-base font-semibold" style={{ fontFamily: "'Fraunces', serif" }}>Vérification par e-mail</h3>
+        <h3 className="text-base font-semibold" style={{ fontFamily: "'Fraunces', serif" }}>{t(lang, "ev_title")}</h3>
       </div>
       <p className="mt-2 text-sm" style={{ color: C.slate }}>
-        Avant d'envoyer ta pièce d'identité, confirme que tu as bien accès à <strong>{email}</strong>. Cette étape
-        évite les faux comptes créés automatiquement.
+        {t(lang, "ev_body", { email })}
       </p>
 
       {stage === "intro" && (
@@ -882,17 +886,16 @@ function EmailVerification({ email, onVerified }) {
           <button disabled={busy} onClick={sendLink}
             className="clesch-focus mt-3 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
             style={{ background: C.ink }}>
-            {busy ? <Loader2 size={16} className="animate-spin" /> : "Envoyer le lien de confirmation"}
+            {busy ? <Loader2 size={16} className="animate-spin" /> : t(lang, "ev_send")}
           </button>
         </>
       )}
 
       {stage === "sent" && (
         <div className="mt-3 rounded-lg p-3 text-sm" style={{ background: "#EAF3EE", color: C.green }}>
-          <CheckCircle2 size={16} className="mb-1" /> Un e-mail a été envoyé à {email}. Ouvre-le et clique sur le
-          lien de confirmation — cette page se mettra à jour automatiquement dès que ce sera fait.
+          <CheckCircle2 size={16} className="mb-1" /> {t(lang, "ev_sent_body", { email })}
           <button onClick={sendLink} className="clesch-focus mt-2 flex text-xs underline" style={{ color: C.green }}>
-            Renvoyer l'e-mail
+            {t(lang, "ev_resend")}
           </button>
         </div>
       )}
@@ -901,7 +904,7 @@ function EmailVerification({ email, onVerified }) {
 }
 
 /* ---------- Identity verification gate for landlords/sellers ---------- */
-function VerificationGate({ profile, userId, userEmail, onUpgradeRequested, onSubmitted, onEmailVerified }) {
+function VerificationGate({ profile, userId, userEmail, onUpgradeRequested, onSubmitted, onEmailVerified, lang }) {
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -911,22 +914,21 @@ function VerificationGate({ profile, userId, userEmail, onUpgradeRequested, onSu
       <div className="rounded-xl p-6 text-center" style={{ background: C.card, border: `1px solid ${C.line}` }}>
         <UserCog size={22} className="mx-auto" style={{ color: C.slate }} />
         <p className="mt-2 text-sm" style={{ color: C.slate }}>
-          Ce compte est enregistré comme « à la recherche d'un bien ». Pour publier des annonces, passe ton compte
-          en propriétaire/vendeur — une vérification d'identité sera ensuite demandée.
+          {t(lang, "vg_seeker_body")}
         </p>
         <button
           onClick={onUpgradeRequested}
           className="clesch-focus mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white"
           style={{ background: C.gold }}
         >
-          Devenir propriétaire / vendeur
+          {t(lang, "vg_become_landlord")}
         </button>
       </div>
     );
   }
 
   if (!profile.email_verified) {
-    return <EmailVerification email={userEmail} onVerified={onEmailVerified} />;
+    return <EmailVerification email={userEmail} onVerified={onEmailVerified} lang={lang} />;
   }
 
   if (profile.verification_status === "pending") {
@@ -934,8 +936,7 @@ function VerificationGate({ profile, userId, userEmail, onUpgradeRequested, onSu
       <div className="rounded-xl p-6 text-center" style={{ background: C.card, border: `1px solid ${C.line}` }}>
         <Loader2 size={22} className="mx-auto animate-spin" style={{ color: C.gold }} />
         <p className="mt-2 text-sm" style={{ color: C.slate }}>
-          Ta pièce d'identité a été envoyée et est en cours de vérification manuelle. Tu pourras publier dès
-          qu'elle sera validée.
+          {t(lang, "vg_pending_body")}
         </p>
       </div>
     );
@@ -944,7 +945,7 @@ function VerificationGate({ profile, userId, userEmail, onUpgradeRequested, onSu
   if (profile.verification_status === "verified") return null;
 
   async function submit() {
-    if (!file) { setError("Choisis un fichier (photo ou PDF de ta pièce d'identité)."); return; }
+    if (!file) { setError(t(lang, "vg_upload_error")); return; }
     setBusy(true);
     setError("");
     try {
@@ -956,7 +957,7 @@ function VerificationGate({ profile, userId, userEmail, onUpgradeRequested, onSu
       if (rpcErr) throw rpcErr;
       onSubmitted();
     } catch (err) {
-      setError(err.message || "L'envoi a échoué, réessaie.");
+      setError(err.message || t(lang, "vg_upload_fail"));
     } finally {
       setBusy(false);
     }
@@ -966,34 +967,33 @@ function VerificationGate({ profile, userId, userEmail, onUpgradeRequested, onSu
     <div className="rounded-xl p-6" style={{ background: C.card, border: `1px solid ${C.line}` }}>
       <div className="flex items-center gap-2" style={{ color: C.ink }}>
         <ShieldQuestion size={18} />
-        <h3 className="text-base font-semibold" style={{ fontFamily: "'Fraunces', serif" }}>Vérification d'identité requise</h3>
+        <h3 className="text-base font-semibold" style={{ fontFamily: "'Fraunces', serif" }}>{t(lang, "vg_title")}</h3>
       </div>
       {profile.verification_status === "rejected" && (
         <div className="mt-2 rounded-lg p-3 text-sm" style={{ background: "#F7EAE6", color: C.rust }}>
-          Ta précédente demande a été refusée{profile.rejection_reason ? ` : ${profile.rejection_reason}` : "."} Tu peux renvoyer un document.
+          {t(lang, "vg_rejected_prefix")}{profile.rejection_reason ? ` : ${profile.rejection_reason}` : "."} {t(lang, "vg_rejected_suffix")}
         </div>
       )}
       <p className="mt-2 text-sm" style={{ color: C.slate }}>
-        Envoie une photo ou un scan lisible d'une pièce d'identité (carte d'identité, passeport). Un membre de
-        l'équipe vérifie manuellement chaque demande avant d'autoriser la publication d'annonces.
+        {t(lang, "vg_upload_intro")}
       </p>
       <label className="clesch-focus mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed p-4 text-sm" style={{ borderColor: C.line, color: C.slate }}>
         <UploadCloud size={16} />
-        {file ? file.name : "Choisir un fichier"}
+        {file ? file.name : t(lang, "vg_choose_file")}
         <input type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
       </label>
       {error && <p className="mt-2 text-xs" style={{ color: C.rust }}>{error}</p>}
       <button disabled={busy} onClick={submit}
         className="clesch-focus mt-3 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
         style={{ background: C.ink }}>
-        {busy ? <Loader2 size={16} className="animate-spin" /> : "Envoyer pour vérification"}
+        {busy ? <Loader2 size={16} className="animate-spin" /> : t(lang, "vg_submit")}
       </button>
     </div>
   );
 }
 
 /* ---------- Admin moderation panel ---------- */
-function AdminPanel() {
+function AdminPanel({ lang }) {
   const [pending, setPending] = useState([]);
   const [loading, setLoading] = useState(true);
   const [docUrls, setDocUrls] = useState({});
@@ -1038,7 +1038,7 @@ function AdminPanel() {
   }, []);
 
   async function deleteListing(id) {
-    if (!window.confirm("Supprimer définitivement cette annonce ?")) return;
+    if (!window.confirm(t(lang, "admin_delete_confirm"))) return;
     setDeletingId(id);
     await supabase.from("listings").delete().eq("id", id);
     setDeletingId(null);
@@ -1055,7 +1055,7 @@ function AdminPanel() {
 
   async function decide(id, email, verification_status) {
     setBusyId(id);
-    const reason = verification_status === "rejected" ? (rejectReason[id] || "Document illisible ou non conforme.") : null;
+    const reason = verification_status === "rejected" ? (rejectReason[id] || (lang === "en" ? "Illegible or non-compliant document." : "Document illisible ou non conforme.")) : null;
     await supabase.from("profiles").update({
       verification_status,
       rejection_reason: reason,
@@ -1069,14 +1069,14 @@ function AdminPanel() {
 
   return (
     <div>
-      <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Espace admin</p>
-      <h1 className="mt-1 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>Vérifications en attente</h1>
+      <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "admin_title")}</p>
+      <h1 className="mt-1 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_pending_title")}</h1>
 
       {loading ? (
-        <div className="flex items-center gap-2 py-10 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> Chargement…</div>
+        <div className="flex items-center gap-2 py-10 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> {t(lang, "admin_loading")}</div>
       ) : pending.length === 0 ? (
         <div className="mt-4 rounded-xl border p-8 text-center text-sm" style={{ borderColor: C.line, color: C.slate }}>
-          Aucune demande en attente.
+          {t(lang, "admin_no_pending")}
         </div>
       ) : (
         <div className="mt-4 space-y-3">
@@ -1085,24 +1085,24 @@ function AdminPanel() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p className="text-sm font-semibold" style={{ color: C.ink }}>{row.email}</p>
-                  <p className="text-xs" style={{ color: C.slate }}>Statut : {row.verification_status}</p>
+                  <p className="text-xs" style={{ color: C.slate }}>{t(lang, "admin_status")} : {row.verification_status}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => viewDocument(row)} className="clesch-focus rounded-lg border px-3 py-1.5 text-xs font-medium" style={{ borderColor: C.line, color: C.ink }}>
-                    Voir le document
+                    {t(lang, "admin_view_doc")}
                   </button>
                   <button disabled={busyId === row.id} onClick={() => decide(row.id, row.email, "verified")}
                     className="clesch-focus rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60" style={{ background: C.green }}>
-                    Approuver
+                    {t(lang, "admin_approve")}
                   </button>
                   <button disabled={busyId === row.id} onClick={() => decide(row.id, row.email, "rejected")}
                     className="clesch-focus rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60" style={{ background: C.rust }}>
-                    Refuser
+                    {t(lang, "admin_reject")}
                   </button>
                 </div>
               </div>
               <input
-                placeholder="Motif de refus (optionnel)"
+                placeholder={t(lang, "admin_reject_reason_ph")}
                 value={rejectReason[row.id] || ""}
                 onChange={(e) => setRejectReason((m) => ({ ...m, [row.id]: e.target.value }))}
                 className="clesch-focus mt-2 w-full rounded-lg border px-3 py-1.5 text-xs outline-none"
@@ -1110,7 +1110,7 @@ function AdminPanel() {
               />
               {docUrls[row.id] && (
                 <a href={docUrls[row.id]} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-medium" style={{ color: C.gold }}>
-                  Ouvrir le document <ExternalLink size={12} />
+                  {t(lang, "admin_open_doc")} <ExternalLink size={12} />
                 </a>
               )}
             </div>
@@ -1118,14 +1118,14 @@ function AdminPanel() {
         </div>
       )}
 
-      <p className="mt-10 font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Modération</p>
-      <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>Annonces publiées</h2>
+      <p className="mt-10 font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "admin_moderation")}</p>
+      <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_listings_title")}</h2>
 
       {listingsLoading ? (
-        <div className="flex items-center gap-2 py-6 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> Chargement…</div>
+        <div className="flex items-center gap-2 py-6 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> {t(lang, "admin_loading")}</div>
       ) : listings.length === 0 ? (
         <div className="mt-3 rounded-xl border p-6 text-center text-sm" style={{ borderColor: C.line, color: C.slate }}>
-          Aucune annonce publiée pour l'instant.
+          {t(lang, "admin_no_listings")}
         </div>
       ) : (
         <div className="mt-3 space-y-2">
@@ -1133,29 +1133,29 @@ function AdminPanel() {
             <div key={l.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl p-3" style={{ background: C.card, border: `1px solid ${C.line}` }}>
               <div>
                 <p className="text-sm font-semibold" style={{ color: C.ink }}>
-                  {TYPES[l.type]?.label} · {TRANSACTIONS[l.transaction]?.label} — {l.city}, {l.country}
+                  {t(lang, `type_${l.type}`)} · {t(lang, `trans_${l.transaction}`)} — {l.city}, {l.country}
                 </p>
                 <p className="text-xs" style={{ color: C.slate }}>
-                  {l.owner_name} · {l.phone} · {formatPrice(l.price)} € · réf. {l.id}
+                  {l.owner_name} · {l.phone} · {formatPrice(l.price)} € · {t(lang, "modal_ref").toLowerCase()} {l.id}
                 </p>
               </div>
               <button disabled={deletingId === l.id} onClick={() => deleteListing(l.id)}
                 className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60" style={{ background: C.rust }}>
-                <Trash2 size={13} /> Supprimer
+                <Trash2 size={13} /> {t(lang, "admin_delete")}
               </button>
             </div>
           ))}
         </div>
       )}
 
-      <p className="mt-10 font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Support</p>
-      <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>Messages reçus</h2>
+      <p className="mt-10 font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "admin_support")}</p>
+      <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_messages_title")}</h2>
 
       {messagesLoading ? (
-        <div className="flex items-center gap-2 py-6 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> Chargement…</div>
+        <div className="flex items-center gap-2 py-6 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> {t(lang, "admin_loading")}</div>
       ) : messages.length === 0 ? (
         <div className="mt-3 rounded-xl border p-6 text-center text-sm" style={{ borderColor: C.line, color: C.slate }}>
-          Aucun message pour l'instant.
+          {t(lang, "admin_no_messages")}
         </div>
       ) : (
         <div className="mt-3 space-y-3">
@@ -1163,7 +1163,7 @@ function AdminPanel() {
             <div key={m.id} className="rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold" style={{ color: C.ink }}>{m.email}</p>
-                <p className="text-xs" style={{ color: C.slate }}>{new Date(m.created_at).toLocaleString("fr-FR")}</p>
+                <p className="text-xs" style={{ color: C.slate }}>{new Date(m.created_at).toLocaleString(lang === "en" ? "en-GB" : "fr-FR")}</p>
               </div>
               <p className="mt-1.5 text-sm" style={{ color: C.ink }}>{m.message}</p>
             </div>
@@ -1185,7 +1185,7 @@ function ContactModal({ defaultEmail, onClose, lang }) {
   async function submit(e) {
     e.preventDefault();
     setError("");
-    if (!email.trim() || !message.trim()) { setError("Renseigne ton e-mail et ton message."); return; }
+    if (!email.trim() || !message.trim()) { setError(t(lang, "contact_error")); return; }
     setBusy(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -1220,7 +1220,7 @@ function ContactModal({ defaultEmail, onClose, lang }) {
         {sent ? (
           <div className="mt-4 flex flex-col items-center gap-2 rounded-lg p-4 text-center text-sm" style={{ background: "#EAF3EE", color: C.green }}>
             <CheckCircle2 size={20} />
-            Message envoyé. On te répond dès que possible à {email}.
+            {t(lang, "contact_sent")} {email}.
           </div>
         ) : (
           <form onSubmit={submit} className="mt-4 space-y-2.5">
@@ -1236,7 +1236,7 @@ function ContactModal({ defaultEmail, onClose, lang }) {
               <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "contact_message_label")}</label>
               <textarea required rows={4} value={message} onChange={(e) => setMessage(e.target.value)}
                 className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }}
-                placeholder="Décris ta difficulté…" />
+                placeholder={t(lang, "contact_placeholder")} />
             </div>
             {error && <p className="text-xs" style={{ color: C.rust }}>{error}</p>}
             <button disabled={busy} type="submit"
@@ -1546,19 +1546,19 @@ export default function CleSchengen() {
 
             {dbLoading && (
               <div className="flex items-center justify-center gap-2 py-16 text-sm" style={{ color: C.slate }}>
-                <Loader2 size={16} className="animate-spin" /> Chargement des annonces…
+                <Loader2 size={16} className="animate-spin" /> {t(lang, "loading_listings")}
               </div>
             )}
 
             {dbError && !dbLoading && (
               <div className="mb-4 rounded-lg p-3 text-sm" style={{ background: "#F7EAE6", color: C.rust }}>
-                Impossible de synchroniser la base partagée pour le moment — réessaie dans un instant.
+                {t(lang, "db_error")}
               </div>
             )}
 
             {!dbLoading && (
               <>
-                <p className="mb-3 text-xs" style={{ color: C.slate }}>{filtered.length} annonce(s) trouvée(s)</p>
+                <p className="mb-3 text-xs" style={{ color: C.slate }}>{filtered.length} {t(lang, "results_found")}</p>
                 {filtered.length === 0 ? (
                   <div className="rounded-xl border p-8 text-center" style={{ borderColor: C.line, color: C.slate }}>
                     {t(lang, "no_results")}
@@ -1577,18 +1577,18 @@ export default function CleSchengen() {
 
         {tab === "add" && (
           <div>
-            <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Espace propriétaire</p>
+            <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "add_landlord_gate_title")}</p>
             {!session ? (
               <div className="mt-4 rounded-xl p-6 text-center" style={{ background: C.card, border: `1px solid ${C.line}` }}>
                 <Lock size={20} className="mx-auto" style={{ color: C.slate }} />
-                <p className="mt-2 text-sm" style={{ color: C.slate }}>Connecte-toi ou crée un compte propriétaire pour publier une annonce.</p>
+                <p className="mt-2 text-sm" style={{ color: C.slate }}>{t(lang, "add_landlord_login_prompt")}</p>
                 <button onClick={() => setAuthModal("signup")} className="clesch-focus mt-3 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: C.gold }}>
-                  Créer un compte
+                  {t(lang, "add_create_account")}
                 </button>
               </div>
             ) : !profile ? (
               <div className="mt-4 flex items-center justify-center gap-2 py-16 text-sm" style={{ color: C.slate }}>
-                <Loader2 size={16} className="animate-spin" /> Chargement de ton compte…
+                <Loader2 size={16} className="animate-spin" /> {t(lang, "add_loading_account")}
               </div>
             ) : !isVerifiedLandlord ? (
               <div className="mt-4">
@@ -1599,6 +1599,7 @@ export default function CleSchengen() {
                   onUpgradeRequested={async () => { await supabase.rpc("request_bailleur_upgrade"); await loadProfile(session.user.id); }}
                   onSubmitted={() => loadProfile(session.user.id)}
                   onEmailVerified={() => loadProfile(session.user.id)}
+                  lang={lang}
                 />
               </div>
             ) : (
@@ -1607,7 +1608,7 @@ export default function CleSchengen() {
                   <AddListingForm onSubmit={handleAddListing} saving={saving} lang={lang} />
                 </div>
                 <button onClick={() => setTab("premium")} className="clesch-focus mt-4 flex items-center gap-1.5 text-sm font-medium" style={{ color: C.gold }}>
-                  <Sparkles size={14} /> Mettre mes annonces en avant avec un abonnement Premium
+                  <Sparkles size={14} /> {t(lang, "add_premium_cta")}
                 </button>
               </>
             )}
@@ -1616,26 +1617,24 @@ export default function CleSchengen() {
 
         {tab === "premium" && (
           <div>
-            <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Espace propriétaire</p>
+            <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "add_landlord_gate_title")}</p>
             <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "premium_title")}</h1>
             <p className="mt-2 max-w-2xl text-sm" style={{ color: C.slate }}>
-              Pendant toute la durée de validité de ton abonnement : accès libre pour publier des annonces sans
-              attendre la vérification d'identité, et déblocage gratuit et illimité des contacts de toutes les
-              annonces.
+              {t(lang, "premium_subtitle")}
             </p>
             <p className="mt-2 flex items-center gap-1.5 text-xs" style={{ color: C.green }}>
               <ShieldCheck size={13} /> {t(lang, "modal_secure_payment")}.
             </p>
             {hasActiveSubscription && (
               <p className="mt-3 flex items-center gap-1.5 rounded-lg p-3 text-sm" style={{ background: "#EAF3EE", color: C.green }}>
-                <CheckCircle2 size={15} /> Ton abonnement est actif — profite de l'accès libre dès maintenant.
+                <CheckCircle2 size={15} /> {t(lang, "premium_active_note")}
               </p>
             )}
 
             {!session ? (
               <div className="mt-4 rounded-xl p-6 text-center" style={{ background: C.card, border: `1px solid ${C.line}` }}>
                 <Lock size={20} className="mx-auto" style={{ color: C.slate }} />
-                <p className="mt-2 text-sm" style={{ color: C.slate }}>Connecte-toi pour lier l'abonnement à ton compte.</p>
+                <p className="mt-2 text-sm" style={{ color: C.slate }}>{t(lang, "premium_login_prompt")}</p>
                 <button onClick={() => setAuthModal("login")} className="clesch-focus mt-3 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: C.gold }}>
                   {t(lang, "login")}
                 </button>
@@ -1650,9 +1649,9 @@ export default function CleSchengen() {
                   </div>
                   <p className="mt-2 flex-1 text-sm" style={{ color: C.slate }}>{p.tagline}</p>
                   <ul className="mt-3 space-y-1 text-xs" style={{ color: C.slate }}>
-                    <li>• Publication libre, sans attendre la vérification d'identité</li>
-                    <li>• Contacts débloqués gratuitement et sans limite</li>
-                    <li>• Badge Premium sur tes annonces</li>
+                    <li>• {t(lang, "premium_benefit_1")}</li>
+                    <li>• {t(lang, "premium_benefit_2")}</li>
+                    <li>• {t(lang, "premium_benefit_3")}</li>
                   </ul>
                   <a href={`${p.url}?client_reference_id=${session.user.id}&prefilled_email=${encodeURIComponent(session.user.email)}`}
                     target="_blank" rel="noopener noreferrer"
@@ -1681,7 +1680,7 @@ export default function CleSchengen() {
             ) : (
               <>
                 <p className="mb-4 text-sm" style={{ color: C.slate }}>
-                  Ces contacts restent enregistrés sur ton compte, même si tu reviens plus tard.
+                  {t(lang, "history_subtitle")}
                 </p>
                 {unlockedList.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 rounded-xl border p-10 text-center" style={{ borderColor: C.line, color: C.slate }}>
@@ -1707,7 +1706,7 @@ export default function CleSchengen() {
           </div>
         )}
 
-        {tab === "admin" && isAdmin && <AdminPanel />}
+        {tab === "admin" && isAdmin && <AdminPanel lang={lang} />}
       </main>
 
       <footer className="mx-auto max-w-5xl px-5 pb-10 pt-4 text-xs" style={{ color: C.slate }}>
