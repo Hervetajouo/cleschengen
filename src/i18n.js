@@ -139,6 +139,10 @@ const fr = {
   dash_delete_confirm: "Supprimer définitivement cette annonce ?",
   edit_title: "Modifier l'annonce", edit_save: "Enregistrer les modifications", edit_saving: "Enregistrement…",
   edit_saved: "Modifications enregistrées.", edit_error: "Échec de l'enregistrement, réessaie.", edit_cancel: "Annuler",
+
+  admin_visitors_title: "Visiteurs du site", admin_total_views: "Pages vues", admin_unique_visitors: "Visiteurs uniques",
+  admin_daily_title: "14 derniers jours", admin_by_page_title: "Par page", admin_col_date: "Date",
+  admin_col_views: "Vues", admin_col_visitors: "Visiteurs uniques", admin_no_data: "Pas encore assez de données.",
 };
 
 const en = {
@@ -272,6 +276,10 @@ const en = {
   dash_delete_confirm: "Permanently delete this listing?",
   edit_title: "Edit listing", edit_save: "Save changes", edit_saving: "Saving…",
   edit_saved: "Changes saved.", edit_error: "Failed to save, try again.", edit_cancel: "Cancel",
+
+  admin_visitors_title: "Site visitors", admin_total_views: "Page views", admin_unique_visitors: "Unique visitors",
+  admin_daily_title: "Last 14 days", admin_by_page_title: "By page", admin_col_date: "Date",
+  admin_col_views: "Views", admin_col_visitors: "Unique visitors", admin_no_data: "Not enough data yet.",
 };
 
 export const translations = { fr, en };

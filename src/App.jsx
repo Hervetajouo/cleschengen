@@ -1037,6 +1037,24 @@ function AdminPanel({ lang }) {
     setMessagesLoading(false);
   }, []);
 
+  const [analytics, setAnalytics] = useState(null);
+  const [dailyStats, setDailyStats] = useState([]);
+  const [tabStats, setTabStats] = useState([]);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+
+  const loadAnalytics = useCallback(async () => {
+    setAnalyticsLoading(true);
+    const [{ data: totals }, { data: daily }, { data: byTab }] = await Promise.all([
+      supabase.rpc("site_analytics"),
+      supabase.rpc("site_analytics_daily"),
+      supabase.rpc("site_analytics_by_tab"),
+    ]);
+    setAnalytics(totals?.[0] || null);
+    setDailyStats(daily || []);
+    setTabStats(byTab || []);
+    setAnalyticsLoading(false);
+  }, []);
+
   const [listings, setListings] = useState([]);
   const [listingsLoading, setListingsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
@@ -1059,7 +1077,7 @@ function AdminPanel({ lang }) {
     loadListingsAdmin();
   }
 
-  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); }, [load, loadMessages, loadListingsAdmin]);
+  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); loadAnalytics(); }, [load, loadMessages, loadListingsAdmin, loadAnalytics]);
 
   async function viewDocument(row) {
     if (!row.id_document_path) return;
@@ -1084,7 +1102,79 @@ function AdminPanel({ lang }) {
   return (
     <div>
       <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "admin_title")}</p>
-      <h1 className="mt-1 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_pending_title")}</h1>
+      <h1 className="mt-1 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_visitors_title")}</h1>
+
+      {analyticsLoading ? (
+        <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> {t(lang, "admin_loading")}</div>
+      ) : (
+        <>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+              <p className="text-xs" style={{ color: C.slate }}>{t(lang, "admin_total_views")}</p>
+              <p className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{analytics?.total_views ?? 0}</p>
+            </div>
+            <div className="rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+              <p className="text-xs" style={{ color: C.slate }}>{t(lang, "admin_unique_visitors")}</p>
+              <p className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{analytics?.unique_visitors ?? 0}</p>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-sm font-semibold" style={{ color: C.ink }}>{t(lang, "admin_daily_title")}</p>
+              {dailyStats.length === 0 ? (
+                <p className="mt-2 text-xs" style={{ color: C.slate }}>{t(lang, "admin_no_data")}</p>
+              ) : (
+                <table className="mt-2 w-full text-xs">
+                  <thead>
+                    <tr style={{ color: C.slate }}>
+                      <th className="py-1 text-left font-medium">{t(lang, "admin_col_date")}</th>
+                      <th className="py-1 text-right font-medium">{t(lang, "admin_col_views")}</th>
+                      <th className="py-1 text-right font-medium">{t(lang, "admin_col_visitors")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dailyStats.map((d) => (
+                      <tr key={d.day} style={{ borderTop: `1px solid ${C.line}` }}>
+                        <td className="py-1" style={{ color: C.ink }}>{d.day}</td>
+                        <td className="py-1 text-right" style={{ color: C.ink }}>{d.views}</td>
+                        <td className="py-1 text-right" style={{ color: C.ink }}>{d.unique_visitors}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: C.ink }}>{t(lang, "admin_by_page_title")}</p>
+              {tabStats.length === 0 ? (
+                <p className="mt-2 text-xs" style={{ color: C.slate }}>{t(lang, "admin_no_data")}</p>
+              ) : (
+                <table className="mt-2 w-full text-xs">
+                  <thead>
+                    <tr style={{ color: C.slate }}>
+                      <th className="py-1 text-left font-medium">{t(lang, "admin_col_date")}</th>
+                      <th className="py-1 text-right font-medium">{t(lang, "admin_col_views")}</th>
+                      <th className="py-1 text-right font-medium">{t(lang, "admin_col_visitors")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tabStats.map((r) => (
+                      <tr key={r.tab} style={{ borderTop: `1px solid ${C.line}` }}>
+                        <td className="py-1" style={{ color: C.ink }}>{r.tab}</td>
+                        <td className="py-1 text-right" style={{ color: C.ink }}>{r.views}</td>
+                        <td className="py-1 text-right" style={{ color: C.ink }}>{r.unique_visitors}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      <h1 className="mt-10 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_pending_title")}</h1>
 
       {loading ? (
         <div className="flex items-center gap-2 py-10 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> {t(lang, "admin_loading")}</div>
@@ -1513,6 +1603,16 @@ export default function CleSchengen() {
   const [contactOpen, setContactOpen] = useState(false);
   const [lang, setLang] = useState(() => localStorage.getItem("clesch-lang") || "fr");
   useEffect(() => { localStorage.setItem("clesch-lang", lang); }, [lang]);
+
+  /* ---- Anonymous, privacy-friendly visit tracking (no personal data) ---- */
+  useEffect(() => {
+    let sid = localStorage.getItem("clesch-sid");
+    if (!sid) {
+      sid = crypto.randomUUID();
+      localStorage.setItem("clesch-sid", sid);
+    }
+    supabase.from("page_views").insert({ session_id: sid, tab }).then(null, () => {});
+  }, [tab]);
 
   const [tab, setTab] = useState("how"); // how | browse | add | history | premium | admin
 
