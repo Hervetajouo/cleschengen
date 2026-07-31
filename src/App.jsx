@@ -170,7 +170,7 @@ function ListingCard({ listing, unlocked, onOpen }) {
             </Badge>
             <div className="mt-1.5 flex items-center gap-1 text-sm" style={{ color: C.slate }}>
               <MapPin size={13} />
-              <span>{listing.city}, {listing.country}</span>
+              <span>{listing.neighborhood ? `${listing.neighborhood}, ` : ""}{listing.city}, {listing.country}</span>
             </div>
           </div>
         </div>
@@ -273,7 +273,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
 
           <div className="flex items-center gap-2">
             <h3 className="text-xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>
-              {listing.city}, {listing.country}
+              {listing.neighborhood ? `${listing.neighborhood}, ` : ""}{listing.city}, {listing.country}
             </h3>
             {listing.verified && (
               <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: "#EAF3EE", color: C.green }}>
@@ -357,7 +357,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
 
 /* ---------- Add listing form ---------- */
 function AddListingForm({ onSubmit, saving }) {
-  const empty = { owner: "", phone: "", type: "maison", transaction: "location", country: COUNTRIES[0], city: "", price: "", desc: "" };
+  const empty = { owner: "", phone: "", type: "maison", transaction: "location", country: COUNTRIES[0], city: "", neighborhood: "", price: "", desc: "" };
   const [form, setForm] = useState(empty);
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(null);
@@ -447,6 +447,7 @@ function AddListingForm({ onSubmit, saving }) {
     if (!form.owner.trim()) e.owner = "Indique ton nom.";
     if (!form.phone.trim()) e.phone = "Indique un numéro joignable.";
     if (!form.city.trim()) e.city = "Indique la ville.";
+    if (!form.neighborhood.trim()) e.neighborhood = "Indique le quartier.";
     if (!form.price || Number(form.price) <= 0) e.price = "Indique un prix valide.";
     if (!form.desc.trim()) e.desc = "Ajoute une courte description.";
     setErrors(e);
@@ -542,6 +543,14 @@ function AddListingForm({ onSubmit, saving }) {
             className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
             style={{ borderColor: errors.city ? C.rust : C.line }} placeholder="ex. Lyon" />
           {errors.city && <p className="mt-1 text-xs" style={{ color: C.rust }}>{errors.city}</p>}
+        </div>
+
+        <div>
+          <label className="text-xs font-medium" style={{ color: C.slate }}>Quartier</label>
+          <input value={form.neighborhood} onChange={(e) => set("neighborhood", e.target.value)}
+            className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
+            style={{ borderColor: errors.neighborhood ? C.rust : C.line }} placeholder="ex. Croix-Rousse" />
+          {errors.neighborhood && <p className="mt-1 text-xs" style={{ color: C.rust }}>{errors.neighborhood}</p>}
         </div>
 
         <div className="col-span-2">
@@ -1129,6 +1138,7 @@ export default function CleSchengen() {
           transaction: l.transaction,
           country: l.country,
           city: l.city,
+          neighborhood: l.neighborhood,
           price: l.price,
           owner: l.owner_name,
           phone: l.phone,
@@ -1196,6 +1206,7 @@ export default function CleSchengen() {
       transaction: listing.transaction,
       country: listing.country,
       city: listing.city,
+      neighborhood: listing.neighborhood,
       price: Number(listing.price),
       owner_name: listing.owner,
       phone: listing.phone,
@@ -1225,7 +1236,7 @@ export default function CleSchengen() {
       if (fType !== "all" && l.type !== fType) return false;
       if (fTrans !== "all" && l.transaction !== fTrans) return false;
       if (fCountry !== "all" && l.country !== fCountry) return false;
-      if (q && !(`${l.city} ${l.country} ${l.desc}`.toLowerCase().includes(q.toLowerCase()))) return false;
+      if (q && !(`${l.neighborhood || ""} ${l.city} ${l.country} ${l.desc}`.toLowerCase().includes(q.toLowerCase()))) return false;
       return true;
     });
   }, [listings, fType, fTrans, fCountry, q]);
