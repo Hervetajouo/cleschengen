@@ -31,20 +31,52 @@ Deno.serve(async (req) => {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const userId = session.metadata?.user_id;
-    const listingId = session.metadata?.listing_id;
 
-    if (userId && listingId) {
-      const { error } = await supabaseAdmin.from("unlocks").upsert({
-        user_id: userId,
-        listing_id: listingId,
-        stripe_session_id: session.id,
-      });
-      if (error) {
-        console.error("Échec écriture unlock:", error.message);
-        return new Response("db error", { status: 500 });
+    if (session.mode === "subscription") {
+      // Achat d'un abonnement Premium via un Payment Link. On récupère
+      // l'utilisateur via client_reference_id (ajouté par le site à l'URL
+      // du lien) et on va chercher la date de fin de période auprès de
+      // Stripe pour savoir jusqu'à quand l'accès libre est valide.
+      const userId = session.client_reference_id;
+      const subscriptionId = session.subscription as string | null;
+      if (userId && subscriptionId) {
+        const sub = await stripe.subscriptions.retrieve(subscriptionId);
+        await supabaseAdmin.from("subscriptions").upsert({
+          user_id: userId,
+          stripe_subscription_id: subscriptionId,
+          status: sub.status,
+          current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      }
+    } else {
+      // Paiement ponctuel de déblocage de contact.
+      const userId = session.metadata?.user_id;
+      const listingId = session.metadata?.listing_id;
+      if (userId && listingId) {
+        const { error } = await supabaseAdmin.from("unlocks").upsert({
+          user_id: userId,
+          listing_id: listingId,
+          stripe_session_id: session.id,
+        });
+        if (error) {
+          console.error("Échec écriture unlock:", error.message);
+          return new Response("db error", { status: 500 });
+        }
       }
     }
+  }
+
+  if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
+    const sub = event.data.object as Stripe.Subscription;
+    await supabaseAdmin
+      .from("subscriptions")
+      .update({
+        status: event.type === "customer.subscription.deleted" ? "canceled" : sub.status,
+        current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("stripe_subscription_id", sub.id);
   }
 
   return new Response(JSON.stringify({ received: true }), {

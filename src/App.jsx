@@ -1236,10 +1236,7 @@ export default function CleSchengen() {
   const loadListings = useCallback(async () => {
     setDbLoading(true);
     setDbError(false);
-    const { data, error } = await supabase
-      .from("listings")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.rpc("public_listings");
     if (error) {
       setDbError(true);
       setListings([]);
@@ -1259,6 +1256,7 @@ export default function CleSchengen() {
           verified: true,
           photos: l.photos || [],
           ownerId: l.owner_id,
+          contactVisible: l.phone !== null,
         }))
       );
     }
@@ -1274,8 +1272,21 @@ export default function CleSchengen() {
     setUnlocked(map);
   }, []);
 
+  /* ---- Active Premium subscription (grants free unlocks + skips landlord verification) ---- */
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const loadSubscription = useCallback(async (uid) => {
+    if (!uid) { setHasActiveSubscription(false); return; }
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("status, current_period_end")
+      .eq("user_id", uid)
+      .maybeSingle();
+    setHasActiveSubscription(!!data && data.status === "active" && new Date(data.current_period_end) > new Date());
+  }, []);
+
   useEffect(() => { loadListings(); }, [loadListings]);
   useEffect(() => { loadUnlocks(session?.user?.id); }, [session, loadUnlocks]);
+  useEffect(() => { loadSubscription(session?.user?.id); }, [session, loadSubscription]);
 
   /* ---- Handle the redirect back from Stripe Checkout ---- */
   useEffect(() => {
@@ -1288,13 +1299,17 @@ export default function CleSchengen() {
       let tries = 0;
       const interval = setInterval(async () => {
         tries += 1;
-        await loadUnlocks(session.user.id);
+        await Promise.all([
+          loadUnlocks(session.user.id),
+          loadListings(),
+          loadSubscription(session.user.id),
+        ]);
         if (tries >= 5) clearInterval(interval);
       }, 1500);
       setTab("history");
       return () => clearInterval(interval);
     }
-  }, [session, loadUnlocks]);
+  }, [session, loadUnlocks, loadListings, loadSubscription]);
 
   /* ---- Handle the return from the email verification link ---- */
   useEffect(() => {
@@ -1356,7 +1371,7 @@ export default function CleSchengen() {
 
   const unlockedList = listings.filter((l) => unlocked[l.id]);
   const isAdmin = profile?.role === "admin";
-  const isVerifiedLandlord = profile?.role === "bailleur" && profile?.verification_status === "verified";
+  const isVerifiedLandlord = (profile?.role === "bailleur" && profile?.verification_status === "verified") || hasActiveSubscription;
 
   const NAV_ITEMS = [
     ["how", "Comment ça marche"],
@@ -1472,7 +1487,7 @@ export default function CleSchengen() {
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {filtered.map((l) => (
-                      <ListingCard key={l.id} listing={l} unlocked={!!unlocked[l.id]} onOpen={setActive} />
+                      <ListingCard key={l.id} listing={l} unlocked={l.contactVisible} onOpen={setActive} />
                     ))}
                   </div>
                 )}
@@ -1525,13 +1540,28 @@ export default function CleSchengen() {
             <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Espace propriétaire</p>
             <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>Abonnement Premium</h1>
             <p className="mt-2 max-w-2xl text-sm" style={{ color: C.slate }}>
-              Mets tes annonces en avant : badge Premium, priorité dans les résultats de recherche et vérification
-              accélérée. Choisis la formule qui te convient.
+              Pendant toute la durée de validité de ton abonnement : accès libre pour publier des annonces sans
+              attendre la vérification d'identité, et déblocage gratuit et illimité des contacts de toutes les
+              annonces.
             </p>
             <p className="mt-2 flex items-center gap-1.5 text-xs" style={{ color: C.green }}>
               <ShieldCheck size={13} /> Paiement réel et sécurisé via Stripe.
             </p>
+            {hasActiveSubscription && (
+              <p className="mt-3 flex items-center gap-1.5 rounded-lg p-3 text-sm" style={{ background: "#EAF3EE", color: C.green }}>
+                <CheckCircle2 size={15} /> Ton abonnement est actif — profite de l'accès libre dès maintenant.
+              </p>
+            )}
 
+            {!session ? (
+              <div className="mt-4 rounded-xl p-6 text-center" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+                <Lock size={20} className="mx-auto" style={{ color: C.slate }} />
+                <p className="mt-2 text-sm" style={{ color: C.slate }}>Connecte-toi pour lier l'abonnement à ton compte.</p>
+                <button onClick={() => setAuthModal("login")} className="clesch-focus mt-3 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: C.gold }}>
+                  Se connecter
+                </button>
+              </div>
+            ) : (
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
               {PLANS.map((p) => (
                 <div key={p.key} className="flex flex-col rounded-xl p-5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
@@ -1541,11 +1571,12 @@ export default function CleSchengen() {
                   </div>
                   <p className="mt-2 flex-1 text-sm" style={{ color: C.slate }}>{p.tagline}</p>
                   <ul className="mt-3 space-y-1 text-xs" style={{ color: C.slate }}>
+                    <li>• Publication libre, sans attendre la vérification d'identité</li>
+                    <li>• Contacts débloqués gratuitement et sans limite</li>
                     <li>• Badge Premium sur tes annonces</li>
-                    <li>• Mise en avant dans les résultats</li>
-                    <li>• Vérification prioritaire</li>
                   </ul>
-                  <a href={p.url} target="_blank" rel="noopener noreferrer"
+                  <a href={`${p.url}?client_reference_id=${session.user.id}&prefilled_email=${encodeURIComponent(session.user.email)}`}
+                    target="_blank" rel="noopener noreferrer"
                     className="clesch-focus mt-4 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white"
                     style={{ background: C.ink }}>
                     S'abonner <ExternalLink size={14} />
@@ -1553,6 +1584,7 @@ export default function CleSchengen() {
                 </div>
               ))}
             </div>
+            )}
           </div>
         )}
 
@@ -1607,7 +1639,7 @@ export default function CleSchengen() {
       {active && (
         <ListingModal
           listing={active}
-          unlocked={!!unlocked[active.id]}
+          unlocked={active.contactVisible}
           session={session}
           onClose={() => setActive(null)}
           onUnlock={handleUnlock}
