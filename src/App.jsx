@@ -707,33 +707,42 @@ function HowItWorks({ goTo, lang }) {
   ];
   return (
     <div>
-      <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Mode d'emploi</p>
-      <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>
-        {t(lang, "how_title")}
-      </h1>
-      <p className="mt-3 max-w-2xl text-sm" style={{ color: C.slate }}>
-        {t(lang, "how_subtitle")}
-      </p>
-
-      <div className="mt-6 space-y-3">
-        {steps.map((s) => (
-          <div key={s.n} className="flex gap-4 rounded-xl p-5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
-            <div className="text-2xl font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: C.gold }}>{s.n}</div>
-            <div>
-              <div className="text-base font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{s.title}</div>
-              <div className="mt-0.5 text-sm" style={{ color: C.slate }}>{s.body}</div>
+      {/* Full-bleed hero banner, breaks out of the centered <main> container */}
+      <div className="relative left-1/2 right-1/2 -mx-[50vw] -mt-8 w-screen">
+        <div className="relative isolate overflow-hidden" style={{ minHeight: "460px" }}>
+          <img src="/hero-bg.png" alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <div
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(180deg, rgba(22,35,63,0.80) 0%, rgba(22,35,63,0.55) 45%, rgba(22,35,63,0.92) 100%)" }}
+          />
+          <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-5 py-20 text-center sm:py-28">
+            <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.gold }}>CléSchengen</p>
+            <h1 className="mt-3 max-w-3xl text-4xl font-semibold text-white sm:text-5xl" style={{ fontFamily: "'Fraunces', serif" }}>
+              {t(lang, "how_title")}
+            </h1>
+            <p className="mt-4 max-w-2xl text-base" style={{ color: "rgba(255,255,255,0.85)" }}>
+              {t(lang, "how_subtitle")}
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <button onClick={() => goTo("browse")} className="clesch-focus flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white" style={{ background: C.gold }}>
+                {t(lang, "how_cta_browse")} <ArrowRight size={15} />
+              </button>
+              <button onClick={() => goTo("add")} className="clesch-focus flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white" style={{ background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.4)" }}>
+                {t(lang, "how_cta_post")} <Plus size={15} />
+              </button>
             </div>
           </div>
-        ))}
+        </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <button onClick={() => goTo("browse")} className="clesch-focus flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white" style={{ background: C.ink }}>
-          {t(lang, "how_cta_browse")} <ArrowRight size={15} />
-        </button>
-        <button onClick={() => goTo("add")} className="clesch-focus flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold" style={{ background: C.card, border: `1px solid ${C.ink}`, color: C.ink }}>
-          {t(lang, "how_cta_post")} <Plus size={15} />
-        </button>
+      <div className="mt-10 grid gap-4 sm:grid-cols-3">
+        {steps.map((s) => (
+          <div key={s.n} className="rounded-xl p-5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+            <div className="text-2xl font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: C.gold }}>{s.n}</div>
+            <div className="mt-2 text-base font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{s.title}</div>
+            <div className="mt-1.5 text-sm" style={{ color: C.slate }}>{s.body}</div>
+          </div>
+        ))}
       </div>
     </div>
   );
