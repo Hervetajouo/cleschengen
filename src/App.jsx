@@ -69,7 +69,7 @@ const PLANS = [
   {
     key: "monthly",
     label: "Mensuel",
-    tagline: "Le choix le plus courant pour un bailleur actif.",
+    tagline: "Le choix le plus courant pour un propriétaire actif.",
     url: "https://buy.stripe.com/7sYeVcdpngwQ7Quc1scMM01",
   },
   {
@@ -277,7 +277,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
             </h3>
             {listing.verified && (
               <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: "#EAF3EE", color: C.green }}>
-                <BadgeCheck size={12} /> Bailleur vérifié
+                <BadgeCheck size={12} /> Propriétaire vérifié
               </span>
             )}
           </div>
@@ -300,7 +300,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
             <div className="rounded-xl p-4 text-center" style={{ background: C.paper, border: `1px dashed ${C.line}` }}>
               <Lock size={20} className="mx-auto" style={{ color: C.slate }} />
               <p className="mt-2 text-sm" style={{ color: C.slate }}>
-                Le nom et le numéro du bailleur sont masqués. Débloque ses coordonnées pour le contacter directement.
+                Le nom et le numéro du propriétaire sont masqués. Débloque ses coordonnées pour le contacter directement.
               </p>
               <p className="mt-2 flex items-center justify-center gap-1.5 text-xs" style={{ color: C.green }}>
                 <ShieldCheck size={13} /> Paiement réel et sécurisé via Stripe
@@ -597,12 +597,12 @@ function AddListingForm({ onSubmit, saving }) {
         {/* Phone verification */}
         <div className="col-span-2 rounded-lg p-3.5" style={{ background: C.paper, border: `1px solid ${C.line}` }}>
           <div className="flex items-center gap-2 text-sm font-medium" style={{ color: C.ink }}>
-            <Smartphone size={15} /> Vérification du bailleur
+            <Smartphone size={15} /> Vérification du propriétaire
           </div>
 
           {verified ? (
             <p className="mt-2 flex items-center gap-1.5 text-sm" style={{ color: C.green }}>
-              <BadgeCheck size={15} /> Numéro vérifié — ton annonce portera le badge « Bailleur vérifié ».
+              <BadgeCheck size={15} /> Numéro vérifié — ton annonce portera le badge « Propriétaire vérifié ».
             </p>
           ) : (
             <>
@@ -665,9 +665,9 @@ function AddListingForm({ onSubmit, saving }) {
 /* ---------- Dedicated onboarding tab ---------- */
 function HowItWorks({ goTo }) {
   const steps = [
-    { n: "01", title: "Le bailleur publie", body: "Le propriétaire d'une maison, d'une chambre ou d'une voiture dépose son annonce : ville, pays de l'espace Schengen, prix et description. Son numéro reste masqué." },
-    { n: "02", title: "Le client cherche et choisit", body: "Une personne intéressée filtre les annonces par type, transaction et pays, puis ouvre celle qui lui convient. Le contact du bailleur reste scellé tant qu'il n'a pas payé." },
-    { n: "03", title: "Le client paie pour être mis en contact", body: `En réglant ${UNLOCK_FEE.toFixed(2)} € de frais de mise en relation, le nom et le numéro du bailleur sont débloqués immédiatement, pour appeler et décider soi-même.` },
+    { n: "01", title: "Le propriétaire publie", body: "Le propriétaire d'une maison, d'une chambre ou d'une voiture dépose son annonce : ville, pays de l'espace Schengen, prix et description. Son numéro reste masqué." },
+    { n: "02", title: "Le client cherche et choisit", body: "Une personne intéressée filtre les annonces par type, transaction et pays, puis ouvre celle qui lui convient. Le contact du propriétaire reste scellé tant qu'il n'a pas payé." },
+    { n: "03", title: "Le client paie pour être mis en contact", body: `En réglant ${UNLOCK_FEE.toFixed(2)} € de frais de mise en relation, le nom et le numéro du propriétaire sont débloqués immédiatement, pour appeler et décider soi-même.` },
   ];
   return (
     <div>
@@ -698,7 +698,7 @@ function HowItWorks({ goTo }) {
           Parcourir les annonces <ArrowRight size={15} />
         </button>
         <button onClick={() => goTo("add")} className="clesch-focus flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold" style={{ background: C.card, border: `1px solid ${C.ink}`, color: C.ink }}>
-          Je suis bailleur, je publie <Plus size={15} />
+          Je suis propriétaire, je publie <Plus size={15} />
         </button>
       </div>
     </div>
@@ -782,7 +782,7 @@ function AuthModal({ mode: initialMode, onClose }) {
                 <button type="button" onClick={() => setRole("bailleur")}
                   className="clesch-focus rounded-lg border px-3 py-2 text-sm font-medium"
                   style={{ borderColor: role === "bailleur" ? C.gold : C.line, background: role === "bailleur" ? "#FBF3E7" : "transparent", color: C.ink }}>
-                  Bailleur / vendeur
+                  Propriétaire / vendeur
                 </button>
               </div>
               {role === "bailleur" && (
@@ -888,14 +888,14 @@ function VerificationGate({ profile, userId, userEmail, onUpgradeRequested, onSu
         <UserCog size={22} className="mx-auto" style={{ color: C.slate }} />
         <p className="mt-2 text-sm" style={{ color: C.slate }}>
           Ce compte est enregistré comme « à la recherche d'un bien ». Pour publier des annonces, passe ton compte
-          en bailleur/vendeur — une vérification d'identité sera ensuite demandée.
+          en propriétaire/vendeur — une vérification d'identité sera ensuite demandée.
         </p>
         <button
           onClick={onUpgradeRequested}
           className="clesch-focus mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white"
           style={{ background: C.gold }}
         >
-          Devenir bailleur / vendeur
+          Devenir propriétaire / vendeur
         </button>
       </div>
     );
@@ -995,12 +995,16 @@ function AdminPanel() {
     if (data?.signedUrl) setDocUrls((m) => ({ ...m, [row.id]: data.signedUrl }));
   }
 
-  async function decide(id, verification_status) {
+  async function decide(id, email, verification_status) {
     setBusyId(id);
+    const reason = verification_status === "rejected" ? (rejectReason[id] || "Document illisible ou non conforme.") : null;
     await supabase.from("profiles").update({
       verification_status,
-      rejection_reason: verification_status === "rejected" ? (rejectReason[id] || "Document illisible ou non conforme.") : null,
+      rejection_reason: reason,
     }).eq("id", id);
+    await supabase.functions.invoke("send-verification-email", {
+      body: { email, status: verification_status, reason },
+    });
     setBusyId(null);
     load();
   }
@@ -1029,11 +1033,11 @@ function AdminPanel() {
                   <button onClick={() => viewDocument(row)} className="clesch-focus rounded-lg border px-3 py-1.5 text-xs font-medium" style={{ borderColor: C.line, color: C.ink }}>
                     Voir le document
                   </button>
-                  <button disabled={busyId === row.id} onClick={() => decide(row.id, "verified")}
+                  <button disabled={busyId === row.id} onClick={() => decide(row.id, row.email, "verified")}
                     className="clesch-focus rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60" style={{ background: C.green }}>
                     Approuver
                   </button>
-                  <button disabled={busyId === row.id} onClick={() => decide(row.id, "rejected")}
+                  <button disabled={busyId === row.id} onClick={() => decide(row.id, row.email, "rejected")}
                     className="clesch-focus rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60" style={{ background: C.rust }}>
                     Refuser
                   </button>
@@ -1233,7 +1237,7 @@ export default function CleSchengen() {
   const NAV_ITEMS = [
     ["how", "Comment ça marche"],
     ["browse", "Rechercher"],
-    ["add", "Devenir bailleur"],
+    ["add", "Poster"],
     ["premium", "Abonnement"],
   ];
 
@@ -1294,7 +1298,7 @@ export default function CleSchengen() {
             <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Étape 1 — Trouver</p>
             <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>Parcourir les annonces</h1>
             <p className="mt-2 max-w-2xl text-sm" style={{ color: C.slate }}>
-              Filtre par type de bien, transaction et pays, puis ouvre une annonce pour débloquer le contact du bailleur.
+              Filtre par type de bien, transaction et pays, puis ouvre une annonce pour débloquer le contact du propriétaire.
             </p>
 
             <div className="mb-5 mt-5 flex flex-wrap items-center gap-2.5">
@@ -1351,11 +1355,11 @@ export default function CleSchengen() {
 
         {tab === "add" && (
           <div>
-            <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Espace bailleur</p>
+            <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Espace propriétaire</p>
             {!session ? (
               <div className="mt-4 rounded-xl p-6 text-center" style={{ background: C.card, border: `1px solid ${C.line}` }}>
                 <Lock size={20} className="mx-auto" style={{ color: C.slate }} />
-                <p className="mt-2 text-sm" style={{ color: C.slate }}>Connecte-toi ou crée un compte bailleur pour publier une annonce.</p>
+                <p className="mt-2 text-sm" style={{ color: C.slate }}>Connecte-toi ou crée un compte propriétaire pour publier une annonce.</p>
                 <button onClick={() => setAuthModal("signup")} className="clesch-focus mt-3 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: C.gold }}>
                   Créer un compte
                 </button>
@@ -1390,7 +1394,7 @@ export default function CleSchengen() {
 
         {tab === "premium" && (
           <div>
-            <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Espace bailleur</p>
+            <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Espace propriétaire</p>
             <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>Abonnement Premium</h1>
             <p className="mt-2 max-w-2xl text-sm" style={{ color: C.slate }}>
               Mets tes annonces en avant : badge Premium, priorité dans les résultats de recherche et vérification
@@ -1468,8 +1472,8 @@ export default function CleSchengen() {
       </main>
 
       <footer className="mx-auto max-w-5xl px-5 pb-10 pt-4 text-xs" style={{ color: C.slate }}>
-        CléSchengen — les annonces sont stockées dans une base partagée. Les coordonnées des bailleurs ne sont
-        révélées qu'après paiement, et la publication d'annonces est réservée aux comptes bailleurs vérifiés.
+        CléSchengen — les annonces sont stockées dans une base partagée. Les coordonnées des propriétaires ne sont
+        révélées qu'après paiement, et la publication d'annonces est réservée aux comptes propriétaires vérifiés.
       </footer>
 
       {active && (
