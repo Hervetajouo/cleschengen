@@ -113,6 +113,13 @@ function genOtp() {
   return String(Math.floor(1000 + Math.random() * 9000));
 }
 
+function genCaptcha() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sans caractères ambigus (0/O, 1/I…)
+  let code = "";
+  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 /* ---------- Small building blocks ---------- */
 function Badge({ children, tone = "ink" }) {
   const bg = tone === "green" ? C.green : C.inkSoft;
@@ -378,8 +385,8 @@ function AddListingForm({ onSubmit, saving }) {
   const [verified, setVerified] = useState(false);
 
   // Anti-robot check (demo widget — see note below)
-  const [robotChecking, setRobotChecking] = useState(false);
-  const [robotChecked, setRobotChecked] = useState(false);
+  const [captchaCode, setCaptchaCode] = useState(genCaptcha());
+  const [captchaInput, setCaptchaInput] = useState("");
 
   const [gateError, setGateError] = useState("");
 
@@ -437,10 +444,9 @@ function AddListingForm({ onSubmit, saving }) {
     }
   }
 
-  function toggleRobot() {
-    if (robotChecked) { setRobotChecked(false); return; }
-    setRobotChecking(true);
-    setTimeout(() => { setRobotChecking(false); setRobotChecked(true); }, 550);
+  function refreshCaptcha() {
+    setCaptchaCode(genCaptcha());
+    setCaptchaInput("");
   }
 
   function validate() {
@@ -462,8 +468,9 @@ function AddListingForm({ onSubmit, saving }) {
       setGateError("Vérifie ton numéro de téléphone avant de publier.");
       return;
     }
-    if (!robotChecked) {
-      setGateError("Coche la case anti-robot avant de publier.");
+    if (captchaInput.trim().toUpperCase() !== captchaCode) {
+      setGateError("Le code anti-robot saisi est incorrect.");
+      refreshCaptcha();
       return;
     }
     const id = "SCH-" + Date.now().toString(36).toUpperCase().slice(-5);
@@ -476,7 +483,7 @@ function AddListingForm({ onSubmit, saving }) {
       setPhotos([]);
       setVerified(false);
       setOtpSent(false);
-      setRobotChecked(false);
+      refreshCaptcha();
     } else {
       setSaveError(true);
     }
@@ -644,19 +651,27 @@ function AddListingForm({ onSubmit, saving }) {
         </div>
 
         {/* Anti-robot check */}
-        <div className="col-span-2 flex items-center gap-3 rounded-lg p-3.5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
-          <button
-            onClick={toggleRobot}
-            className="clesch-focus flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md"
-            style={{ border: `1.5px solid ${robotChecked ? C.green : C.line}`, background: robotChecked ? C.green : "transparent" }}
-            aria-pressed={robotChecked}
-          >
-            {robotChecking ? <Loader2 size={13} className="animate-spin" style={{ color: C.slate }} /> : robotChecked ? <CheckCircle2 size={14} color="white" /> : null}
-          </button>
-          <div>
-            <p className="text-sm font-medium" style={{ color: C.ink }}>Je ne suis pas un robot</p>
-            <p className="text-xs" style={{ color: C.slate }}>Vérification anti-robot (démo) — un vrai service utiliserait reCAPTCHA, hCaptcha ou Cloudflare Turnstile.</p>
+        <div className="col-span-2 rounded-lg p-3.5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+          <p className="text-sm font-medium" style={{ color: C.ink }}>Vérification anti-robot</p>
+          <p className="mt-1 text-xs" style={{ color: C.slate }}>Recopie le code affiché pour confirmer que tu n'es pas un robot.</p>
+          <div className="mt-2 flex items-center gap-2">
+            <span
+              className="select-none rounded-lg px-4 py-2 text-lg font-bold tracking-[0.3em]"
+              style={{ background: C.paper, border: `1px dashed ${C.line}`, color: C.ink, textDecoration: "line-through", fontStyle: "italic" }}
+            >
+              {captchaCode}
+            </span>
+            <button type="button" onClick={refreshCaptcha} className="clesch-focus rounded-lg p-2 text-lg" style={{ color: C.slate }} title="Générer un autre code">
+              ↻
+            </button>
           </div>
+          <input
+            value={captchaInput}
+            onChange={(e) => setCaptchaInput(e.target.value)}
+            placeholder="Recopie le code ci-dessus"
+            className="clesch-focus mt-2 w-full max-w-xs rounded-lg border px-3 py-2 text-sm uppercase outline-none"
+            style={{ borderColor: C.line }}
+          />
         </div>
       </div>
 
