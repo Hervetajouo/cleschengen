@@ -1371,7 +1371,7 @@ export default function CleSchengen() {
 
       <header className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 text-white" style={{ background: C.ink }}>
         <div className="flex items-center gap-2">
-          <ShieldCheck size={20} style={{ color: C.gold }} />
+          <img src="/logo.png" alt="CléSchengen" style={{ width: 32, height: 32, borderRadius: "50%" }} />
           <span className="text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif" }}>CléSchengen</span>
         </div>
         <nav className="flex flex-wrap items-center gap-1 text-sm">
