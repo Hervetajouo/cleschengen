@@ -4,7 +4,7 @@ import {
   CheckCircle2, HelpCircle, Copy, ArrowRight,
   ShieldCheck, ChevronDown, KeyRound, ListChecks, Loader2, Info, Building2,
   ImagePlus, Trash2, BadgeCheck, Smartphone, Sparkles, ImageOff, ExternalLink,
-  LogOut, UploadCloud, UserCog, ShieldQuestion, Mail, KeySquare,
+  LogOut, UploadCloud, UserCog, ShieldQuestion, Mail, KeySquare, Package, MessageCircleQuestion,
 } from "lucide-react";
 import { supabase } from "./supabaseClient.js";
 
@@ -47,11 +47,12 @@ const TYPES = {
   maison: { label: "Maison", icon: Home },
   chambre: { label: "Chambre", icon: BedDouble },
   voiture: { label: "Voiture", icon: Car },
+  appareils: { label: "Appareils", icon: Package },
 };
 
 const TRANSACTIONS = {
-  location: { label: "Location", unit: { maison: "/mois", chambre: "/mois", voiture: "/jour" } },
-  vente: { label: "Vente", unit: { maison: "", chambre: "", voiture: "" } },
+  location: { label: "Location", unit: { maison: "/mois", chambre: "/mois", voiture: "/jour", appareils: "/jour" } },
+  vente: { label: "Vente", unit: { maison: "", chambre: "", voiture: "", appareils: "" } },
 };
 
 const UNLOCK_FEE = 2.99;
@@ -984,6 +985,8 @@ function AdminPanel() {
   const [docUrls, setDocUrls] = useState({});
   const [busyId, setBusyId] = useState(null);
   const [rejectReason, setRejectReason] = useState({});
+  const [messages, setMessages] = useState([]);
+  const [messagesLoading, setMessagesLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -996,7 +999,17 @@ function AdminPanel() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const loadMessages = useCallback(async () => {
+    setMessagesLoading(true);
+    const { data } = await supabase
+      .from("contact_messages")
+      .select("id, email, message, created_at")
+      .order("created_at", { ascending: false });
+    setMessages(data || []);
+    setMessagesLoading(false);
+  }, []);
+
+  useEffect(() => { load(); loadMessages(); }, [load, loadMessages]);
 
   async function viewDocument(row) {
     if (!row.id_document_path) return;
@@ -1068,17 +1081,111 @@ function AdminPanel() {
           ))}
         </div>
       )}
+
+      <p className="mt-10 font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Support</p>
+      <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>Messages reçus</h2>
+
+      {messagesLoading ? (
+        <div className="flex items-center gap-2 py-6 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> Chargement…</div>
+      ) : messages.length === 0 ? (
+        <div className="mt-3 rounded-xl border p-6 text-center text-sm" style={{ borderColor: C.line, color: C.slate }}>
+          Aucun message pour l'instant.
+        </div>
+      ) : (
+        <div className="mt-3 space-y-3">
+          {messages.map((m) => (
+            <div key={m.id} className="rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold" style={{ color: C.ink }}>{m.email}</p>
+                <p className="text-xs" style={{ color: C.slate }}>{new Date(m.created_at).toLocaleString("fr-FR")}</p>
+              </div>
+              <p className="mt-1.5 text-sm" style={{ color: C.ink }}>{m.message}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-/* ---------- Main app ---------- */
+/* ---------- Contact the admin (for support / difficulties) ---------- */
+function ContactModal({ defaultEmail, onClose }) {
+  const [email, setEmail] = useState(defaultEmail || "");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
+
+  async function submit(e) {
+    e.preventDefault();
+    setError("");
+    if (!email.trim() || !message.trim()) { setError("Renseigne ton e-mail et ton message."); return; }
+    setBusy(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error: err } = await supabase.from("contact_messages").insert({
+        user_id: user?.id || null,
+        email: email.trim(),
+        message: message.trim(),
+      });
+      if (err) throw err;
+      setSent(true);
+    } catch (err) {
+      setError(err.message || "Échec de l'envoi, réessaie.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.4)" }} onClick={onClose}>
+      <div className="w-full max-w-sm rounded-2xl p-6 shadow-xl" style={{ background: C.card }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>Contactez-nous</h3>
+          <button onClick={onClose} className="clesch-focus" style={{ color: C.slate }}><X size={18} /></button>
+        </div>
+
+        {sent ? (
+          <div className="mt-4 flex flex-col items-center gap-2 rounded-lg p-4 text-center text-sm" style={{ background: "#EAF3EE", color: C.green }}>
+            <CheckCircle2 size={20} />
+            Message envoyé. On te répond dès que possible à {email}.
+          </div>
+        ) : (
+          <form onSubmit={submit} className="mt-4 space-y-2.5">
+            <p className="text-sm" style={{ color: C.slate }}>
+              Une difficulté avec ton compte, un paiement ou une annonce ? Décris-la ici, on te répond par e-mail.
+            </p>
+            <div>
+              <label className="text-xs font-medium" style={{ color: C.slate }}>Ton e-mail</label>
+              <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+            </div>
+            <div>
+              <label className="text-xs font-medium" style={{ color: C.slate }}>Message</label>
+              <textarea required rows={4} value={message} onChange={(e) => setMessage(e.target.value)}
+                className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }}
+                placeholder="Décris ta difficulté…" />
+            </div>
+            {error && <p className="text-xs" style={{ color: C.rust }}>{error}</p>}
+            <button disabled={busy} type="submit"
+              className="clesch-focus mt-2 flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+              style={{ background: C.ink }}>
+              {busy ? <Loader2 size={16} className="animate-spin" /> : "Envoyer le message"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Main app ---------- */
 export default function CleSchengen() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authModal, setAuthModal] = useState(null); // null | "login" | "signup"
+  const [contactOpen, setContactOpen] = useState(false);
 
   const [tab, setTab] = useState("how"); // how | browse | add | history | premium | admin
 
@@ -1276,6 +1383,10 @@ export default function CleSchengen() {
             {unlockedList.length > 0 && (
               <span className="ml-0.5 rounded-full px-1.5 text-xs" style={{ background: "rgba(255,255,255,0.2)" }}>{unlockedList.length}</span>
             )}
+          </button>
+          <button onClick={() => setContactOpen(true)}
+            className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium">
+            <MessageCircleQuestion size={14} /> Contactez-nous
           </button>
           {isAdmin && (
             <button onClick={() => setTab("admin")}
@@ -1499,6 +1610,8 @@ export default function CleSchengen() {
       )}
 
       {authModal && <AuthModal mode={authModal} onClose={() => setAuthModal(null)} />}
+
+      {contactOpen && <ContactModal defaultEmail={session?.user?.email} onClose={() => setContactOpen(false)} />}
     </div>
   );
 }
