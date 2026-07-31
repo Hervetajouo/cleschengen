@@ -7,6 +7,7 @@ import {
   LogOut, UploadCloud, UserCog, ShieldQuestion, Mail, KeySquare, Package, MessageCircleQuestion,
 } from "lucide-react";
 import { supabase } from "./supabaseClient.js";
+import { LANGS, t } from "./i18n.js";
 
 /* ---------- Design tokens ---------- */
 const C = {
@@ -150,7 +151,7 @@ function Select({ value, onChange, children }) {
 }
 
 /* ---------- Ticket-style listing card ---------- */
-function ListingCard({ listing, unlocked, onOpen }) {
+function ListingCard({ listing, unlocked, onOpen, lang }) {
   const TypeIcon = TYPES[listing.type].icon;
   const unit = TRANSACTIONS[listing.transaction].unit[listing.type];
   const cover = listing.photos && listing.photos[0];
@@ -169,12 +170,12 @@ function ListingCard({ listing, unlocked, onOpen }) {
             <div className="flex items-center justify-between gap-1">
               <div className="flex items-center gap-1.5" style={{ color: C.inkSoft }}>
                 <TypeIcon size={15} />
-                <span className="text-sm font-semibold">{TYPES[listing.type].label}</span>
+                <span className="text-sm font-semibold">{t(lang, `type_${listing.type}`)}</span>
                 {listing.verified && <BadgeCheck size={14} style={{ color: C.green }} />}
               </div>
             </div>
             <Badge tone={listing.transaction === "vente" ? "green" : "ink"}>
-              {TRANSACTIONS[listing.transaction].label}
+              {t(lang, `trans_${listing.transaction}`)}
             </Badge>
             <div className="mt-1.5 flex items-center gap-1 text-sm" style={{ color: C.slate }}>
               <MapPin size={13} />
@@ -211,7 +212,7 @@ function ListingCard({ listing, unlocked, onOpen }) {
       >
         {unlocked ? <CheckCircle2 size={18} color="white" /> : <Lock size={18} color="white" />}
         <span className="font-medium leading-tight text-white" style={{ fontSize: "11px" }}>
-          {unlocked ? "Débloqué" : "Voir"}
+          {unlocked ? t(lang, "card_unlocked") : t(lang, "card_view")}
         </span>
       </button>
     </div>
@@ -219,7 +220,7 @@ function ListingCard({ listing, unlocked, onOpen }) {
 }
 
 /* ---------- Detail + payment modal ---------- */
-function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequireAuth }) {
+function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequireAuth, lang }) {
   const [stage, setStage] = useState(unlocked ? "revealed" : "detail");
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
@@ -256,7 +257,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
         <div className="flex items-center justify-between p-4" style={{ background: C.ink }}>
           <div className="flex items-center gap-2 text-white">
             <TypeIcon size={18} />
-            <span className="text-sm font-semibold">{TYPES[listing.type].label} · {TRANSACTIONS[listing.transaction].label}</span>
+            <span className="text-sm font-semibold">{t(lang, `type_${listing.type}`)} · {t(lang, `trans_${listing.transaction}`)}</span>
           </div>
           <button onClick={onClose} className="clesch-focus hover:text-white" style={{ color: "rgba(255,255,255,0.8)" }}><X size={18} /></button>
         </div>
@@ -308,10 +309,10 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
             <div className="rounded-xl p-4 text-center" style={{ background: C.paper, border: `1px dashed ${C.line}` }}>
               <Lock size={20} className="mx-auto" style={{ color: C.slate }} />
               <p className="mt-2 text-sm" style={{ color: C.slate }}>
-                Le nom et le numéro du propriétaire sont masqués. Débloque ses coordonnées pour le contacter directement.
+                {t(lang, "modal_locked_message")}
               </p>
               <p className="mt-2 flex items-center justify-center gap-1.5 text-xs" style={{ color: C.green }}>
-                <ShieldCheck size={13} /> Paiement réel et sécurisé via Stripe
+                <ShieldCheck size={13} /> {t(lang, "modal_secure_payment")}
               </p>
               {error && <p className="mt-2 text-xs" style={{ color: C.rust }}>{error}</p>}
               <button
@@ -319,7 +320,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
                 className="clesch-focus mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white"
                 style={{ background: C.gold }}
               >
-                <KeyRound size={16} /> Débloquer le contact — {UNLOCK_FEE.toFixed(2)} €
+                <KeyRound size={16} /> {t(lang, "modal_unlock_button")} — {UNLOCK_FEE.toFixed(2)} €
               </button>
               {!session && (
                 <p className="mt-2 text-xs" style={{ color: C.slate }}>Un compte est nécessaire pour payer et retrouver ce contact ensuite.</p>
@@ -330,7 +331,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
           {stage === "processing" && (
             <div className="flex flex-col items-center gap-2 py-6">
               <Loader2 size={22} className="animate-spin" style={{ color: C.gold }} />
-              <p className="text-sm" style={{ color: C.slate }}>Redirection vers le paiement sécurisé Stripe…</p>
+              <p className="text-sm" style={{ color: C.slate }}>{t(lang, "modal_processing")}</p>
             </div>
           )}
 
@@ -338,7 +339,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
             <div className="stamp-reveal rounded-xl p-4" style={{ background: C.paper, border: `1px solid ${C.line}` }}>
               <div className="flex items-center gap-2" style={{ color: C.green }}>
                 <CheckCircle2 size={16} />
-                <span className="text-sm font-semibold">Contact débloqué</span>
+                <span className="text-sm font-semibold">{t(lang, "modal_revealed_title")}</span>
               </div>
               <div className="mt-2 flex items-center gap-2 text-sm" style={{ color: C.ink }}>
                 <Building2 size={15} />
@@ -348,9 +349,9 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
                 <span className="text-sm" style={{ fontFamily: "'IBM Plex Mono', monospace", color: C.ink }}>{listing.phone}</span>
                 <button onClick={copyPhone} className="clesch-focus" style={{ color: C.slate }}><Copy size={15} /></button>
               </div>
-              {copied && <p className="mt-1 text-xs" style={{ color: C.green }}>Numéro copié.</p>}
+              {copied && <p className="mt-1 text-xs" style={{ color: C.green }}>{t(lang, "modal_copied")}</p>}
               <a href={`tel:${listing.phone.replace(/\s/g, "")}`} className="clesch-focus mt-3 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white" style={{ background: C.green }}>
-                <Phone size={15} /> Appeler {listing.owner.split(" ")[0]}
+                <Phone size={15} /> {t(lang, "modal_call")} {listing.owner.split(" ")[0]}
               </a>
               <p className="mt-3 flex items-center gap-1.5 text-xs" style={{ color: C.slate }}>
                 <Info size={12} /> Retrouve ce contact dans l'onglet « Mes contacts », même après avoir fermé l'application.
@@ -364,7 +365,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
 }
 
 /* ---------- Add listing form ---------- */
-function AddListingForm({ onSubmit, saving }) {
+function AddListingForm({ onSubmit, saving, lang }) {
   const empty = { owner: "", phone: "", type: "maison", transaction: "location", country: COUNTRIES[0], city: "", neighborhood: "", price: "", desc: "" };
   const [form, setForm] = useState(empty);
   const [errors, setErrors] = useState({});
@@ -491,7 +492,7 @@ function AddListingForm({ onSubmit, saving }) {
 
   return (
     <div className="mx-auto max-w-lg">
-      <h2 className="text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>Publier une annonce</h2>
+      <h2 className="text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "add_form_title")}</h2>
       <p className="mt-1 text-sm" style={{ color: C.slate }}>
         Ton numéro reste masqué sur la plateforme. Il n'est révélé qu'aux personnes ayant payé pour le débloquer.
       </p>
@@ -509,7 +510,7 @@ function AddListingForm({ onSubmit, saving }) {
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className="text-xs font-medium" style={{ color: C.slate }}>Ton nom</label>
+          <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_owner_name")}</label>
           <input value={form.owner} onChange={(e) => set("owner", e.target.value)}
             className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
             style={{ borderColor: errors.owner ? C.rust : C.line }} placeholder="Nom et prénom" />
@@ -517,7 +518,7 @@ function AddListingForm({ onSubmit, saving }) {
         </div>
 
         <div className="col-span-2">
-          <label className="text-xs font-medium" style={{ color: C.slate }}>Numéro de téléphone</label>
+          <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_phone")}</label>
           <input value={form.phone} onChange={(e) => set("phone", e.target.value)}
             className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
             style={{ borderColor: errors.phone ? C.rust : C.line }} placeholder="+33 6 12 34 56 78" />
@@ -525,28 +526,28 @@ function AddListingForm({ onSubmit, saving }) {
         </div>
 
         <div>
-          <label className="text-xs font-medium" style={{ color: C.slate }}>Type de bien</label>
+          <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_type")}</label>
           <Select value={form.type} onChange={(e) => set("type", e.target.value)}>
-            {Object.entries(TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            {Object.keys(TYPES).map((k) => <option key={k} value={k}>{t(lang, `type_${k}`)}</option>)}
           </Select>
         </div>
 
         <div>
           <label className="text-xs font-medium" style={{ color: C.slate }}>Type d'annonce</label>
           <Select value={form.transaction} onChange={(e) => set("transaction", e.target.value)}>
-            {Object.entries(TRANSACTIONS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            {Object.keys(TRANSACTIONS).map((k) => <option key={k} value={k}>{t(lang, `trans_${k}`)}</option>)}
           </Select>
         </div>
 
         <div>
-          <label className="text-xs font-medium" style={{ color: C.slate }}>Pays (espace Schengen)</label>
+          <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_country")}</label>
           <Select value={form.country} onChange={(e) => set("country", e.target.value)}>
             {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </Select>
         </div>
 
         <div>
-          <label className="text-xs font-medium" style={{ color: C.slate }}>Ville</label>
+          <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_city")}</label>
           <input value={form.city} onChange={(e) => set("city", e.target.value)}
             className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
             style={{ borderColor: errors.city ? C.rust : C.line }} placeholder="ex. Lyon" />
@@ -554,7 +555,7 @@ function AddListingForm({ onSubmit, saving }) {
         </div>
 
         <div>
-          <label className="text-xs font-medium" style={{ color: C.slate }}>Quartier</label>
+          <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_neighborhood")}</label>
           <input value={form.neighborhood} onChange={(e) => set("neighborhood", e.target.value)}
             className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
             style={{ borderColor: errors.neighborhood ? C.rust : C.line }} placeholder="ex. Croix-Rousse" />
@@ -572,7 +573,7 @@ function AddListingForm({ onSubmit, saving }) {
         </div>
 
         <div className="col-span-2">
-          <label className="text-xs font-medium" style={{ color: C.slate }}>Description</label>
+          <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_description")}</label>
           <textarea value={form.desc} onChange={(e) => set("desc", e.target.value)} rows={3}
             className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
             style={{ borderColor: errors.desc ? C.rust : C.line }} placeholder="Décris le bien, sa disponibilité, ses conditions…" />
@@ -581,7 +582,7 @@ function AddListingForm({ onSubmit, saving }) {
 
         {/* Photos */}
         <div className="col-span-2">
-          <label className="text-xs font-medium" style={{ color: C.slate }}>Photos du bien (jusqu'à {MAX_PHOTOS})</label>
+          <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_photos")} ({MAX_PHOTOS} max)</label>
           <div className="mt-1 flex flex-wrap gap-2">
             {photos.map((p, i) => (
               <div key={i} className="relative h-16 w-16">
@@ -681,29 +682,27 @@ function AddListingForm({ onSubmit, saving }) {
         className="clesch-focus mt-4 flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white"
         style={{ background: C.ink, opacity: saving ? 0.6 : 1 }}>
         {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-        {saving ? "Publication…" : "Publier l'annonce"}
+        {saving ? "…" : t(lang, "add_submit")}
       </button>
     </div>
   );
 }
 
 /* ---------- Dedicated onboarding tab ---------- */
-function HowItWorks({ goTo }) {
+function HowItWorks({ goTo, lang }) {
   const steps = [
-    { n: "01", title: "Le propriétaire publie", body: "Le propriétaire d'une maison, d'une chambre ou d'une voiture dépose son annonce : ville, pays de l'espace Schengen, prix et description. Son numéro reste masqué." },
-    { n: "02", title: "Le client cherche et choisit", body: "Une personne intéressée filtre les annonces par type, transaction et pays, puis ouvre celle qui lui convient. Le contact du propriétaire reste scellé tant qu'il n'a pas payé." },
-    { n: "03", title: "Le client paie pour être mis en contact", body: `En réglant ${UNLOCK_FEE.toFixed(2)} € de frais de mise en relation, le nom et le numéro du propriétaire sont débloqués immédiatement, pour appeler et décider soi-même.` },
+    { n: "01", title: t(lang, "how_step1_title"), body: "Le propriétaire d'une maison, d'une chambre ou d'une voiture dépose son annonce : ville, pays de l'espace Schengen, prix et description. Son numéro reste masqué." },
+    { n: "02", title: t(lang, "how_step2_title"), body: "Une personne intéressée filtre les annonces par type, transaction et pays, puis ouvre celle qui lui convient. Le contact du propriétaire reste scellé tant qu'il n'a pas payé." },
+    { n: "03", title: t(lang, "how_step3_title"), body: `En réglant ${UNLOCK_FEE.toFixed(2)} € de frais de mise en relation, le nom et le numéro du propriétaire sont débloqués immédiatement, pour appeler et décider soi-même.` },
   ];
   return (
     <div>
       <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Mode d'emploi</p>
       <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>
-        Comment fonctionne la mise en relation
+        {t(lang, "how_title")}
       </h1>
       <p className="mt-3 max-w-2xl text-sm" style={{ color: C.slate }}>
-        CléSchengen connecte les propriétaires de biens en location ou en vente dans l'espace Schengen avec des
-        personnes qui cherchent un logement ou une voiture. Le contact n'est jamais visible gratuitement : il faut
-        passer par l'étape de paiement pour l'obtenir.
+        {t(lang, "how_subtitle")}
       </p>
 
       <div className="mt-6 space-y-3">
@@ -720,10 +719,10 @@ function HowItWorks({ goTo }) {
 
       <div className="mt-6 flex flex-wrap gap-3">
         <button onClick={() => goTo("browse")} className="clesch-focus flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white" style={{ background: C.ink }}>
-          Parcourir les annonces <ArrowRight size={15} />
+          {t(lang, "how_cta_browse")} <ArrowRight size={15} />
         </button>
         <button onClick={() => goTo("add")} className="clesch-focus flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold" style={{ background: C.card, border: `1px solid ${C.ink}`, color: C.ink }}>
-          Je suis propriétaire, je publie <Plus size={15} />
+          {t(lang, "how_cta_post")} <Plus size={15} />
         </button>
       </div>
     </div>
@@ -731,7 +730,7 @@ function HowItWorks({ goTo }) {
 }
 
 /* ---------- Auth (login / signup) ---------- */
-function AuthModal({ mode: initialMode, onClose }) {
+function AuthModal({ mode: initialMode, onClose, lang }) {
   const [mode, setMode] = useState(initialMode || "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -772,14 +771,14 @@ function AuthModal({ mode: initialMode, onClose }) {
       <div className="w-full max-w-sm rounded-2xl p-6 shadow-xl" style={{ background: C.card }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>
-            {mode === "login" ? "Se connecter" : "Créer un compte"}
+            {mode === "login" ? t(lang, "auth_login_title") : t(lang, "auth_signup_title")}
           </h3>
           <button onClick={onClose} className="clesch-focus" style={{ color: C.slate }}><X size={18} /></button>
         </div>
 
         <form onSubmit={submit} className="mt-4 space-y-2.5">
           <div>
-            <label className="text-xs font-medium" style={{ color: C.slate }}>E-mail</label>
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "auth_email")}</label>
             <div className="relative mt-1">
               <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
               <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)}
@@ -787,7 +786,7 @@ function AuthModal({ mode: initialMode, onClose }) {
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium" style={{ color: C.slate }}>Mot de passe</label>
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "auth_password")}</label>
             <div className="relative mt-1">
               <KeySquare size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
               <input required type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
@@ -802,12 +801,12 @@ function AuthModal({ mode: initialMode, onClose }) {
                 <button type="button" onClick={() => setRole("chercheur")}
                   className="clesch-focus rounded-lg border px-3 py-2 text-sm font-medium"
                   style={{ borderColor: role === "chercheur" ? C.gold : C.line, background: role === "chercheur" ? "#FBF3E7" : "transparent", color: C.ink }}>
-                  À la recherche d'un bien
+                  {t(lang, "auth_role_seeker")}
                 </button>
                 <button type="button" onClick={() => setRole("bailleur")}
                   className="clesch-focus rounded-lg border px-3 py-2 text-sm font-medium"
                   style={{ borderColor: role === "bailleur" ? C.gold : C.line, background: role === "bailleur" ? "#FBF3E7" : "transparent", color: C.ink }}>
-                  Propriétaire / vendeur
+                  {t(lang, "auth_role_landlord")}
                 </button>
               </div>
               {role === "bailleur" && (
@@ -824,7 +823,7 @@ function AuthModal({ mode: initialMode, onClose }) {
           <button disabled={busy} type="submit"
             className="clesch-focus mt-2 flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white disabled:opacity-60"
             style={{ background: C.ink }}>
-            {busy ? <Loader2 size={16} className="animate-spin" /> : mode === "login" ? "Se connecter" : "Créer mon compte"}
+            {busy ? <Loader2 size={16} className="animate-spin" /> : mode === "login" ? t(lang, "auth_submit_login") : t(lang, "auth_submit_signup")}
           </button>
         </form>
 
@@ -833,7 +832,7 @@ function AuthModal({ mode: initialMode, onClose }) {
           className="clesch-focus mt-3 w-full text-center text-xs font-medium"
           style={{ color: C.gold }}
         >
-          {mode === "login" ? "Pas encore de compte ? Créer un compte" : "Déjà un compte ? Se connecter"}
+          {mode === "login" ? t(lang, "auth_switch_to_signup") : t(lang, "auth_switch_to_login")}
         </button>
       </div>
     </div>
@@ -1176,7 +1175,7 @@ function AdminPanel() {
 }
 
 /* ---------- Contact the admin (for support / difficulties) ---------- */
-function ContactModal({ defaultEmail, onClose }) {
+function ContactModal({ defaultEmail, onClose, lang }) {
   const [email, setEmail] = useState(defaultEmail || "");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1214,7 +1213,7 @@ function ContactModal({ defaultEmail, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.4)" }} onClick={onClose}>
       <div className="w-full max-w-sm rounded-2xl p-6 shadow-xl" style={{ background: C.card }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>Contactez-nous</h3>
+          <h3 className="text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "contact_title")}</h3>
           <button onClick={onClose} className="clesch-focus" style={{ color: C.slate }}><X size={18} /></button>
         </div>
 
@@ -1226,15 +1225,15 @@ function ContactModal({ defaultEmail, onClose }) {
         ) : (
           <form onSubmit={submit} className="mt-4 space-y-2.5">
             <p className="text-sm" style={{ color: C.slate }}>
-              Une difficulté avec ton compte, un paiement ou une annonce ? Décris-la ici, on te répond par e-mail.
+              {t(lang, "contact_prompt")}
             </p>
             <div>
-              <label className="text-xs font-medium" style={{ color: C.slate }}>Ton e-mail</label>
+              <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "contact_email_label")}</label>
               <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                 className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
             </div>
             <div>
-              <label className="text-xs font-medium" style={{ color: C.slate }}>Message</label>
+              <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "contact_message_label")}</label>
               <textarea required rows={4} value={message} onChange={(e) => setMessage(e.target.value)}
                 className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }}
                 placeholder="Décris ta difficulté…" />
@@ -1243,7 +1242,7 @@ function ContactModal({ defaultEmail, onClose }) {
             <button disabled={busy} type="submit"
               className="clesch-focus mt-2 flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white disabled:opacity-60"
               style={{ background: C.ink }}>
-              {busy ? <Loader2 size={16} className="animate-spin" /> : "Envoyer le message"}
+              {busy ? <Loader2 size={16} className="animate-spin" /> : t(lang, "contact_send")}
             </button>
           </form>
         )}
@@ -1259,6 +1258,8 @@ export default function CleSchengen() {
   const [authLoading, setAuthLoading] = useState(true);
   const [authModal, setAuthModal] = useState(null); // null | "login" | "signup"
   const [contactOpen, setContactOpen] = useState(false);
+  const [lang, setLang] = useState(() => localStorage.getItem("clesch-lang") || "fr");
+  useEffect(() => { localStorage.setItem("clesch-lang", lang); }, [lang]);
 
   const [tab, setTab] = useState("how"); // how | browse | add | history | premium | admin
 
@@ -1441,10 +1442,10 @@ export default function CleSchengen() {
   const isVerifiedLandlord = (profile?.role === "bailleur" && profile?.verification_status === "verified") || hasActiveSubscription;
 
   const NAV_ITEMS = [
-    ["how", "Comment ça marche"],
-    ["browse", "Rechercher"],
-    ["add", "Poster"],
-    ["premium", "Abonnement"],
+    ["how", t(lang, "nav_how")],
+    ["browse", t(lang, "nav_browse")],
+    ["add", t(lang, "nav_post")],
+    ["premium", t(lang, "nav_premium")],
   ];
 
   return (
@@ -1467,67 +1468,78 @@ export default function CleSchengen() {
           <button onClick={() => setTab("history")}
             className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium"
             style={{ background: tab === "history" ? C.gold : "transparent" }}>
-            Mes contacts
+            {t(lang, "nav_contacts")}
             {unlockedList.length > 0 && (
               <span className="ml-0.5 rounded-full px-1.5 text-xs" style={{ background: "rgba(255,255,255,0.2)" }}>{unlockedList.length}</span>
             )}
           </button>
           <button onClick={() => setContactOpen(true)}
             className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium">
-            <MessageCircleQuestion size={14} /> Contactez-nous
+            <MessageCircleQuestion size={14} /> {t(lang, "nav_contact_us")}
           </button>
           {isAdmin && (
             <button onClick={() => setTab("admin")}
               className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium"
               style={{ background: tab === "admin" ? C.gold : "transparent" }}>
-              <UserCog size={14} /> Admin
+              <UserCog size={14} /> {t(lang, "nav_admin")}
             </button>
           )}
         </nav>
         <div className="flex items-center gap-2 text-sm">
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value)}
+            aria-label={t(lang, "language_label")}
+            className="clesch-focus rounded-lg py-1.5 pl-2 pr-1 text-xs font-medium"
+            style={{ background: "rgba(255,255,255,0.12)", color: "white", border: "none" }}
+          >
+            {LANGS.map((l) => (
+              <option key={l.code} value={l.code} style={{ color: C.ink }}>{l.label}</option>
+            ))}
+          </select>
           {!authLoading && (session ? (
             <>
               <span className="hidden text-xs sm:inline" style={{ color: "rgba(255,255,255,0.75)" }}>{session.user.email}</span>
               <button onClick={signOut} className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium" style={{ background: "rgba(255,255,255,0.12)" }}>
-                <LogOut size={14} /> Déconnexion
+                <LogOut size={14} /> {t(lang, "logout")}
               </button>
             </>
           ) : (
             <button onClick={() => setAuthModal("login")} className="clesch-focus rounded-lg px-3 py-1.5 font-medium" style={{ background: "rgba(255,255,255,0.12)" }}>
-              Se connecter
+              {t(lang, "login")}
             </button>
           ))}
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-5 py-8">
-        {tab === "how" && <HowItWorks goTo={setTab} />}
+        {tab === "how" && <HowItWorks goTo={setTab} lang={lang} />}
 
         {tab === "browse" && (
           <div>
             <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Étape 1 — Trouver</p>
-            <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>Parcourir les annonces</h1>
+            <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "browse_title")}</h1>
             <p className="mt-2 max-w-2xl text-sm" style={{ color: C.slate }}>
-              Filtre par type de bien, transaction et pays, puis ouvre une annonce pour débloquer le contact du propriétaire.
+              {t(lang, "browse_subtitle")}
             </p>
 
             <div className="mb-5 mt-5 flex flex-wrap items-center gap-2.5">
               <div className="relative flex-1" style={{ minWidth: "180px" }}>
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
-                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ville, pays, mot-clé…"
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t(lang, "search_placeholder")}
                   className="clesch-focus w-full rounded-lg border py-2 pl-9 pr-3 text-sm outline-none"
                   style={{ borderColor: C.line, background: C.card }} />
               </div>
               <Select value={fType} onChange={(e) => setFType(e.target.value)}>
-                <option value="all">Tout type</option>
-                {Object.entries(TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                <option value="all">{t(lang, "filter_all_type")}</option>
+                {Object.keys(TYPES).map((k) => <option key={k} value={k}>{t(lang, `type_${k}`)}</option>)}
               </Select>
               <Select value={fTrans} onChange={(e) => setFTrans(e.target.value)}>
-                <option value="all">Location ou vente</option>
-                {Object.entries(TRANSACTIONS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                <option value="all">{t(lang, "filter_all_trans")}</option>
+                {Object.keys(TRANSACTIONS).map((k) => <option key={k} value={k}>{t(lang, `trans_${k}`)}</option>)}
               </Select>
               <Select value={fCountry} onChange={(e) => setFCountry(e.target.value)}>
-                <option value="all">Tout pays</option>
+                <option value="all">{t(lang, "filter_all_country")}</option>
                 {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </Select>
             </div>
@@ -1549,12 +1561,12 @@ export default function CleSchengen() {
                 <p className="mb-3 text-xs" style={{ color: C.slate }}>{filtered.length} annonce(s) trouvée(s)</p>
                 {filtered.length === 0 ? (
                   <div className="rounded-xl border p-8 text-center" style={{ borderColor: C.line, color: C.slate }}>
-                    Aucune annonce ne correspond à ces filtres. Essaie d'élargir ta recherche.
+                    {t(lang, "no_results")}
                   </div>
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {filtered.map((l) => (
-                      <ListingCard key={l.id} listing={l} unlocked={l.contactVisible} onOpen={setActive} />
+                      <ListingCard key={l.id} listing={l} unlocked={l.contactVisible} onOpen={setActive} lang={lang} />
                     ))}
                   </div>
                 )}
@@ -1592,7 +1604,7 @@ export default function CleSchengen() {
             ) : (
               <>
                 <div className="mt-4 rounded-2xl p-6" style={{ background: C.card, border: `1px solid ${C.line}` }}>
-                  <AddListingForm onSubmit={handleAddListing} saving={saving} />
+                  <AddListingForm onSubmit={handleAddListing} saving={saving} lang={lang} />
                 </div>
                 <button onClick={() => setTab("premium")} className="clesch-focus mt-4 flex items-center gap-1.5 text-sm font-medium" style={{ color: C.gold }}>
                   <Sparkles size={14} /> Mettre mes annonces en avant avec un abonnement Premium
@@ -1605,14 +1617,14 @@ export default function CleSchengen() {
         {tab === "premium" && (
           <div>
             <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Espace propriétaire</p>
-            <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>Abonnement Premium</h1>
+            <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "premium_title")}</h1>
             <p className="mt-2 max-w-2xl text-sm" style={{ color: C.slate }}>
               Pendant toute la durée de validité de ton abonnement : accès libre pour publier des annonces sans
               attendre la vérification d'identité, et déblocage gratuit et illimité des contacts de toutes les
               annonces.
             </p>
             <p className="mt-2 flex items-center gap-1.5 text-xs" style={{ color: C.green }}>
-              <ShieldCheck size={13} /> Paiement réel et sécurisé via Stripe.
+              <ShieldCheck size={13} /> {t(lang, "modal_secure_payment")}.
             </p>
             {hasActiveSubscription && (
               <p className="mt-3 flex items-center gap-1.5 rounded-lg p-3 text-sm" style={{ background: "#EAF3EE", color: C.green }}>
@@ -1625,7 +1637,7 @@ export default function CleSchengen() {
                 <Lock size={20} className="mx-auto" style={{ color: C.slate }} />
                 <p className="mt-2 text-sm" style={{ color: C.slate }}>Connecte-toi pour lier l'abonnement à ton compte.</p>
                 <button onClick={() => setAuthModal("login")} className="clesch-focus mt-3 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: C.gold }}>
-                  Se connecter
+                  {t(lang, "login")}
                 </button>
               </div>
             ) : (
@@ -1646,7 +1658,7 @@ export default function CleSchengen() {
                     target="_blank" rel="noopener noreferrer"
                     className="clesch-focus mt-4 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white"
                     style={{ background: C.ink }}>
-                    S'abonner <ExternalLink size={14} />
+                    {t(lang, "premium_subscribe")} <ExternalLink size={14} />
                   </a>
                 </div>
               ))}
@@ -1657,13 +1669,13 @@ export default function CleSchengen() {
 
         {tab === "history" && (
           <div>
-            <h2 className="mb-1 text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>Mes contacts débloqués</h2>
+            <h2 className="mb-1 text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "history_title")}</h2>
             {!session ? (
               <div className="flex flex-col items-center gap-2 rounded-xl border p-10 text-center" style={{ borderColor: C.line, color: C.slate }}>
                 <Lock size={20} />
-                Connecte-toi pour voir les contacts que tu as débloqués.
+                {t(lang, "history_login_prompt")}
                 <button onClick={() => setAuthModal("login")} className="clesch-focus mt-2 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: C.gold }}>
-                  Se connecter
+                  {t(lang, "login")}
                 </button>
               </div>
             ) : (
@@ -1699,8 +1711,7 @@ export default function CleSchengen() {
       </main>
 
       <footer className="mx-auto max-w-5xl px-5 pb-10 pt-4 text-xs" style={{ color: C.slate }}>
-        CléSchengen — les annonces sont stockées dans une base partagée. Les coordonnées des propriétaires ne sont
-        révélées qu'après paiement, et la publication d'annonces est réservée aux comptes propriétaires vérifiés.
+        {t(lang, "footer_tagline")}
       </footer>
 
       {active && (
@@ -1711,12 +1722,13 @@ export default function CleSchengen() {
           onClose={() => setActive(null)}
           onUnlock={handleUnlock}
           onRequireAuth={() => setAuthModal("login")}
+          lang={lang}
         />
       )}
 
-      {authModal && <AuthModal mode={authModal} onClose={() => setAuthModal(null)} />}
+      {authModal && <AuthModal mode={authModal} onClose={() => setAuthModal(null)} lang={lang} />}
 
-      {contactOpen && <ContactModal defaultEmail={session?.user?.email} onClose={() => setContactOpen(false)} />}
+      {contactOpen && <ContactModal defaultEmail={session?.user?.email} onClose={() => setContactOpen(false)} lang={lang} />}
     </div>
   );
 }
