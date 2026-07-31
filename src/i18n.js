@@ -130,6 +130,11 @@ const fr = {
   admin_no_listings: "Aucune annonce publiée pour l'instant.", admin_delete: "Supprimer",
   admin_delete_confirm: "Supprimer définitivement cette annonce ?",
   admin_support: "Support", admin_messages_title: "Messages reçus", admin_no_messages: "Aucun message pour l'instant.",
+
+  nav_dashboard: "Tableau de bord",
+  dash_title: "Mes annonces", dash_subtitle: "Vues et déblocages de tes annonces publiées.",
+  dash_loading: "Chargement…", dash_empty: "Tu n'as encore publié aucune annonce.",
+  dash_col_listing: "Annonce", dash_col_views: "Vues", dash_col_unlocks: "Contacts débloqués", dash_col_price: "Prix",
 };
 
 const en = {
@@ -254,6 +259,11 @@ const en = {
   admin_no_listings: "No listings published yet.", admin_delete: "Delete",
   admin_delete_confirm: "Permanently delete this listing?",
   admin_support: "Support", admin_messages_title: "Messages received", admin_no_messages: "No messages yet.",
+
+  nav_dashboard: "Dashboard",
+  dash_title: "My listings", dash_subtitle: "Views and unlocks for your published listings.",
+  dash_loading: "Loading…", dash_empty: "You haven't published any listing yet.",
+  dash_col_listing: "Listing", dash_col_views: "Views", dash_col_unlocks: "Contacts unlocked", dash_col_price: "Price",
 };
 
 export const translations = { fr, en };

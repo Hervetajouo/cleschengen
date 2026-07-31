@@ -230,6 +230,11 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    supabase.rpc("increment_listing_view", { p_listing_id: listing.id }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listing.id]);
+
   const TypeIcon = TYPES[listing.type].icon;
   const unit = priceUnit(lang, listing.transaction, listing.type);
 
@@ -1251,6 +1256,67 @@ function ContactModal({ defaultEmail, onClose, lang }) {
   );
 }
 
+/* ---------- Owner dashboard (views + unlocks per listing) ---------- */
+function OwnerDashboard({ lang }) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const { data } = await supabase.rpc("my_listings_with_stats");
+      setRows(data || []);
+      setLoading(false);
+    })();
+  }, []);
+
+  return (
+    <div>
+      <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "add_landlord_gate_title")}</p>
+      <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "dash_title")}</h1>
+      <p className="mt-2 max-w-2xl text-sm" style={{ color: C.slate }}>{t(lang, "dash_subtitle")}</p>
+
+      {loading ? (
+        <div className="mt-6 flex items-center gap-2 text-sm" style={{ color: C.slate }}>
+          <Loader2 size={16} className="animate-spin" /> {t(lang, "dash_loading")}
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="mt-6 rounded-xl border p-8 text-center text-sm" style={{ borderColor: C.line, color: C.slate }}>
+          {t(lang, "dash_empty")}
+        </div>
+      ) : (
+        <div className="mt-6 overflow-x-auto rounded-xl" style={{ border: `1px solid ${C.line}` }}>
+          <table className="w-full text-sm" style={{ background: C.card }}>
+            <thead>
+              <tr style={{ background: C.paper, color: C.slate }}>
+                <th className="px-4 py-2.5 text-left font-medium">{t(lang, "dash_col_listing")}</th>
+                <th className="px-4 py-2.5 text-right font-medium">{t(lang, "dash_col_price")}</th>
+                <th className="px-4 py-2.5 text-right font-medium">{t(lang, "dash_col_views")}</th>
+                <th className="px-4 py-2.5 text-right font-medium">{t(lang, "dash_col_unlocks")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} style={{ borderTop: `1px solid ${C.line}` }}>
+                  <td className="px-4 py-2.5">
+                    <div style={{ color: C.ink }}>
+                      {t(lang, `type_${r.type}`)} · {t(lang, `trans_${r.transaction}`)} — {r.neighborhood ? `${r.neighborhood}, ` : ""}{r.city}
+                    </div>
+                    <div className="text-xs" style={{ color: C.slate, fontFamily: "'IBM Plex Mono', monospace" }}>{r.id}</div>
+                  </td>
+                  <td className="px-4 py-2.5 text-right" style={{ color: C.ink }}>{formatPrice(r.price)} €</td>
+                  <td className="px-4 py-2.5 text-right" style={{ color: C.ink }}>{r.views_count}</td>
+                  <td className="px-4 py-2.5 text-right font-semibold" style={{ color: C.green }}>{r.unlocks_count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---------- Main app ---------- */
 export default function CleSchengen() {
   const [session, setSession] = useState(null);
@@ -1473,6 +1539,13 @@ export default function CleSchengen() {
               <span className="ml-0.5 rounded-full px-1.5 text-xs" style={{ background: "rgba(255,255,255,0.2)" }}>{unlockedList.length}</span>
             )}
           </button>
+          {profile?.role === "bailleur" && (
+            <button onClick={() => setTab("dashboard")}
+              className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium"
+              style={{ background: tab === "dashboard" ? C.gold : "transparent" }}>
+              {t(lang, "nav_dashboard")}
+            </button>
+          )}
           <button onClick={() => setContactOpen(true)}
             className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium">
             <MessageCircleQuestion size={14} /> {t(lang, "nav_contact_us")}
@@ -1705,6 +1778,8 @@ export default function CleSchengen() {
             )}
           </div>
         )}
+
+        {tab === "dashboard" && profile?.role === "bailleur" && <OwnerDashboard lang={lang} />}
 
         {tab === "admin" && isAdmin && <AdminPanel lang={lang} />}
       </main>
