@@ -231,7 +231,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
   const [error, setError] = useState("");
 
   useEffect(() => {
-    supabase.rpc("increment_listing_view", { p_listing_id: listing.id }).catch(() => {});
+    supabase.rpc("increment_listing_view", { p_listing_id: listing.id }).then(null, () => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listing.id]);
 
