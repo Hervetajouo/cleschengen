@@ -1009,7 +1009,29 @@ function AdminPanel() {
     setMessagesLoading(false);
   }, []);
 
-  useEffect(() => { load(); loadMessages(); }, [load, loadMessages]);
+  const [listings, setListings] = useState([]);
+  const [listingsLoading, setListingsLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
+
+  const loadListingsAdmin = useCallback(async () => {
+    setListingsLoading(true);
+    const { data } = await supabase
+      .from("listings")
+      .select("id, type, transaction, country, city, owner_name, phone, price, created_at")
+      .order("created_at", { ascending: false });
+    setListings(data || []);
+    setListingsLoading(false);
+  }, []);
+
+  async function deleteListing(id) {
+    if (!window.confirm("Supprimer définitivement cette annonce ?")) return;
+    setDeletingId(id);
+    await supabase.from("listings").delete().eq("id", id);
+    setDeletingId(null);
+    loadListingsAdmin();
+  }
+
+  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); }, [load, loadMessages, loadListingsAdmin]);
 
   async function viewDocument(row) {
     if (!row.id_document_path) return;
@@ -1077,6 +1099,36 @@ function AdminPanel() {
                   Ouvrir le document <ExternalLink size={12} />
                 </a>
               )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className="mt-10 font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>Modération</p>
+      <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>Annonces publiées</h2>
+
+      {listingsLoading ? (
+        <div className="flex items-center gap-2 py-6 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> Chargement…</div>
+      ) : listings.length === 0 ? (
+        <div className="mt-3 rounded-xl border p-6 text-center text-sm" style={{ borderColor: C.line, color: C.slate }}>
+          Aucune annonce publiée pour l'instant.
+        </div>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {listings.map((l) => (
+            <div key={l.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl p-3" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: C.ink }}>
+                  {TYPES[l.type]?.label} · {TRANSACTIONS[l.transaction]?.label} — {l.city}, {l.country}
+                </p>
+                <p className="text-xs" style={{ color: C.slate }}>
+                  {l.owner_name} · {l.phone} · {formatPrice(l.price)} € · réf. {l.id}
+                </p>
+              </div>
+              <button disabled={deletingId === l.id} onClick={() => deleteListing(l.id)}
+                className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60" style={{ background: C.rust }}>
+                <Trash2 size={13} /> Supprimer
+              </button>
             </div>
           ))}
         </div>
