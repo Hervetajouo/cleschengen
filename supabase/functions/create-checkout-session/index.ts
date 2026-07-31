@@ -4,7 +4,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import Stripe from "npm:stripe@16.9.0";
 
-const UNLOCK_FEE_CENTS = 299; // 2,99 €
+const UNLOCK_FEE_CENTS = 499; // 4,99 €
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
   apiVersion: "2024-06-20",

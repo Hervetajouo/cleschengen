@@ -61,7 +61,7 @@ function priceUnit(lang, transaction, type) {
   return type === "voiture" || type === "appareils" ? t(lang, "unit_day") : t(lang, "unit_month");
 }
 
-const UNLOCK_FEE = 2.99;
+const UNLOCK_FEE = 4.99;
 
 
 const MAX_PHOTOS = 4;
