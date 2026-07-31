@@ -1604,6 +1604,8 @@ export default function CleSchengen() {
   const [lang, setLang] = useState(() => localStorage.getItem("clesch-lang") || "fr");
   useEffect(() => { localStorage.setItem("clesch-lang", lang); }, [lang]);
 
+  const [tab, setTab] = useState("how"); // how | browse | add | history | premium | admin
+
   /* ---- Anonymous, privacy-friendly visit tracking (no personal data) ---- */
   useEffect(() => {
     let sid = localStorage.getItem("clesch-sid");
@@ -1613,8 +1615,6 @@ export default function CleSchengen() {
     }
     supabase.from("page_views").insert({ session_id: sid, tab }).then(null, () => {});
   }, [tab]);
-
-  const [tab, setTab] = useState("how"); // how | browse | add | history | premium | admin
 
   const [listings, setListings] = useState([]);
   const [dbLoading, setDbLoading] = useState(true);
