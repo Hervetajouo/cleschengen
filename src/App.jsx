@@ -256,7 +256,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
     l.id !== listing.id && l.type === listing.type && l.transaction === listing.transaction && l.country === listing.country
   );
   let priceHint = null;
-  if (similar.length >= 3) {
+  if (similar.length >= 2) {
     const avg = similar.reduce((s, l) => s + Number(l.price), 0) / similar.length;
     if (listing.price <= avg * 0.9) priceHint = { key: "price_below", color: C.green };
     else if (listing.price >= avg * 1.1) priceHint = { key: "price_above", color: C.rust };
