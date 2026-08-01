@@ -11,6 +11,7 @@ import { supabase } from "./supabaseClient.js";
 import { LANGS, t } from "./i18n.js";
 import { COUNTRY_GUIDES, GENERIC_GUIDE } from "./guides.js";
 import { COUNTRY_COORDS } from "./mapData.js";
+import { TERMS_CONTENT, PRIVACY_CONTENT } from "./legal.js";
 
 /* ---------- Design tokens ---------- */
 const C = {
@@ -1157,6 +1158,57 @@ function ListingsMap({ listings, lang, onOpen }) {
   }, [listings, lang, onOpen]);
 
   return <div ref={containerRef} style={{ height: "500px", borderRadius: "12px", overflow: "hidden", border: `1px solid ${C.line}` }} />;
+}
+
+/* ---------- Legal pages (Terms / Privacy) ---------- */
+function LegalPage({ content, lang }) {
+  const c = content[lang] || content.fr;
+  return (
+    <div className="mx-auto max-w-2xl">
+      <h1 className="text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{c.title}</h1>
+      <p className="mt-1 text-xs" style={{ color: C.slate }}>{c.updated}</p>
+      <div className="mt-6 space-y-5">
+        {c.sections.map((s) => (
+          <div key={s.h}>
+            <h2 className="text-base font-semibold" style={{ color: C.ink }}>{s.h}</h2>
+            <p className="mt-1 text-sm leading-relaxed" style={{ color: C.slate }}>{s.p}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Cookie consent banner ---------- */
+function CookieBanner({ lang, onOpenPrivacy }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem("clesch-cookie-consent")) setVisible(true);
+  }, []);
+
+  function accept() {
+    localStorage.setItem("clesch-cookie-consent", "1");
+    setVisible(false);
+  }
+
+  if (!visible) return null;
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-50 p-4">
+      <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 rounded-xl p-4 shadow-lg sm:flex-row" style={{ background: C.ink }}>
+        <p className="flex-1 text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>
+          {t(lang, "cookie_banner_text")}{" "}
+          <button onClick={onOpenPrivacy} className="clesch-focus underline" style={{ color: C.gold }}>
+            {t(lang, "cookie_banner_link")}
+          </button>
+        </p>
+        <button onClick={accept} className="clesch-focus flex-shrink-0 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: C.gold }}>
+          {t(lang, "cookie_banner_accept")}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function HowItWorks({ goTo, lang }) {
@@ -2857,6 +2909,9 @@ export default function CleSchengen() {
 
         {tab === "guides" && <CountryGuides lang={lang} />}
 
+        {tab === "terms" && <LegalPage content={TERMS_CONTENT} lang={lang} />}
+        {tab === "privacy" && <LegalPage content={PRIVACY_CONTENT} lang={lang} />}
+
         {tab === "premium" && (
           <div>
             <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "add_landlord_gate_title")}</p>
@@ -2987,8 +3042,14 @@ export default function CleSchengen() {
       </main>
 
       <footer className="mx-auto max-w-5xl px-5 pb-10 pt-4 text-xs" style={{ color: C.slate }}>
-        {t(lang, "footer_tagline")}
+        <p>{t(lang, "footer_tagline")}</p>
+        <div className="mt-2 flex gap-4">
+          <button onClick={() => setTab("terms")} className="clesch-focus underline">{t(lang, "footer_terms")}</button>
+          <button onClick={() => setTab("privacy")} className="clesch-focus underline">{t(lang, "footer_privacy")}</button>
+        </div>
       </footer>
+
+      <CookieBanner lang={lang} onOpenPrivacy={() => setTab("privacy")} />
 
       {active && (
         <ListingModal

@@ -35,6 +35,10 @@ const fr = {
   modal_history_hint: "Retrouve ce contact dans l'onglet « Mes contacts », même après avoir fermé l'application.",
   modal_verified_badge: "Propriétaire vérifié", modal_link_copied: "Lien de l'annonce copié !",
 
+  cookie_banner_text: "Ce site utilise le stockage local de votre navigateur (connexion, langue, statistiques anonymes). Aucun cookie publicitaire tiers n'est utilisé.",
+  cookie_banner_link: "En savoir plus", cookie_banner_accept: "J'ai compris",
+  footer_terms: "Conditions d'utilisation", footer_privacy: "Confidentialité",
+
   history_title: "Mes contacts débloqués",
   history_subtitle: "Ces contacts restent enregistrés sur ton compte, même si tu reviens plus tard.",
   history_empty: "Tu n'as encore débloqué aucun contact. Va dans « Rechercher » pour trouver une annonce.",
@@ -230,6 +234,10 @@ const en = {
   modal_account_required: "An account is required to pay and find this contact again later.",
   modal_history_hint: "Find this contact again in the \u201cMy contacts\u201d tab, even after closing the app.",
   modal_verified_badge: "Verified owner", modal_link_copied: "Listing link copied!",
+
+  cookie_banner_text: "This site uses your browser's local storage (login, language, anonymous statistics). No third-party advertising cookies are used.",
+  cookie_banner_link: "Learn more", cookie_banner_accept: "Got it",
+  footer_terms: "Terms of Service", footer_privacy: "Privacy",
 
   history_title: "My unlocked contacts",
   history_subtitle: "These contacts stay saved to your account, even if you come back later.",
