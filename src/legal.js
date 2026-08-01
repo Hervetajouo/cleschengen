@@ -40,11 +40,11 @@ export const TERMS_CONTENT = {
       },
       {
         h: "8. Contact",
-        p: "Pour toute question relative à ces conditions : utilisez le formulaire « Contactez-nous » du site, ou écrivez à [votre e-mail de contact].",
+        p: "Pour toute question relative à ces conditions : utilisez le formulaire « Contactez-nous » du site, ou écrivez à tajouotela1990@gmail.com.",
       },
       {
         h: "9. Droit applicable",
-        p: "Les présentes conditions sont soumises au droit [pays à préciser]. Tout litige sera soumis aux tribunaux compétents de [ville/pays à préciser].",
+        p: "Les présentes conditions sont soumises au droit italien. Tout litige sera soumis aux tribunaux compétents de Pise, Italie.",
       },
     ],
   },
@@ -82,11 +82,11 @@ export const TERMS_CONTENT = {
       },
       {
         h: "8. Contact",
-        p: "For any question regarding these terms: use the \"Contact us\" form on the site, or write to [your contact e-mail].",
+        p: "For any question regarding these terms: use the \"Contact us\" form on the site, or write to tajouotela1990@gmail.com.",
       },
       {
         h: "9. Governing law",
-        p: "These terms are governed by the law of [country to specify]. Any dispute shall be submitted to the competent courts of [city/country to specify].",
+        p: "These terms are governed by Italian law. Any dispute shall be submitted to the competent courts of Pisa, Italy.",
       },
     ],
   },
@@ -99,7 +99,7 @@ export const PRIVACY_CONTENT = {
     sections: [
       {
         h: "1. Responsable du traitement",
-        p: "[Votre nom ou raison sociale], [adresse], [e-mail de contact] — ci-après « CléSchengen », responsable du traitement des données décrites ci-dessous.",
+        p: "CléSchengen, Via Giuseppe Malagoli 6, 56124 Pisa, Italie — tajouotela1990@gmail.com / +39 351 359 8885, responsable du traitement des données décrites ci-dessous.",
       },
       {
         h: "2. Données collectées",
@@ -119,7 +119,7 @@ export const PRIVACY_CONTENT = {
       },
       {
         h: "6. Vos droits (RGPD)",
-        p: "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation et de portabilité de vos données, ainsi que du droit de vous opposer à leur traitement. Pour exercer ces droits, contactez-nous via le formulaire « Contactez-nous » ou à [votre e-mail de contact].",
+        p: "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation et de portabilité de vos données, ainsi que du droit de vous opposer à leur traitement. Pour exercer ces droits, contactez-nous via le formulaire « Contactez-nous » ou à tajouotela1990@gmail.com.",
       },
       {
         h: "7. Cookies et stockage local",
@@ -127,7 +127,7 @@ export const PRIVACY_CONTENT = {
       },
       {
         h: "8. Contact",
-        p: "Pour toute question sur cette politique ou vos données personnelles : formulaire « Contactez-nous » du site, ou [votre e-mail de contact].",
+        p: "Pour toute question sur cette politique ou vos données personnelles : formulaire « Contactez-nous » du site, ou tajouotela1990@gmail.com.",
       },
     ],
   },
@@ -137,7 +137,7 @@ export const PRIVACY_CONTENT = {
     sections: [
       {
         h: "1. Data controller",
-        p: "[Your name or company name], [address], [contact e-mail] — hereinafter \"CléSchengen\", controller of the data described below.",
+        p: "CléSchengen, Via Giuseppe Malagoli 6, 56124 Pisa, Italy — tajouotela1990@gmail.com / +39 351 359 8885, controller of the data described below.",
       },
       {
         h: "2. Data collected",
@@ -157,7 +157,7 @@ export const PRIVACY_CONTENT = {
       },
       {
         h: "6. Your rights (GDPR)",
-        p: "In accordance with GDPR, you have the right to access, rectify, erase, restrict, and port your data, as well as the right to object to its processing. To exercise these rights, contact us via the \"Contact us\" form or at [your contact e-mail].",
+        p: "In accordance with GDPR, you have the right to access, rectify, erase, restrict, and port your data, as well as the right to object to its processing. To exercise these rights, contact us via the \"Contact us\" form or at tajouotela1990@gmail.com.",
       },
       {
         h: "7. Cookies and local storage",
@@ -165,7 +165,7 @@ export const PRIVACY_CONTENT = {
       },
       {
         h: "8. Contact",
-        p: "For any question about this policy or your personal data: the \"Contact us\" form on the site, or [your contact e-mail].",
+        p: "For any question about this policy or your personal data: the \"Contact us\" form on the site, or tajouotela1990@gmail.com.",
       },
     ],
   },
