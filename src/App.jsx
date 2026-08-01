@@ -64,6 +64,27 @@ function priceUnit(lang, transaction, type) {
   return type === "voiture" || type === "appareils" ? t(lang, "unit_day") : t(lang, "unit_month");
 }
 
+function detailsSummary(lang, listing) {
+  const d = listing.details || {};
+  if (listing.type === "maison") {
+    if (d.subtype === "appartement") {
+      const aptLabel = t(lang, `apt_${d.aptSubtype || "bilocale"}`).split(" (")[0];
+      return `${aptLabel} · ${d.bedrooms || "?"} ${t(lang, "add_bedrooms").toLowerCase()} · ${d.bathrooms || "?"} ${t(lang, "add_bathrooms").toLowerCase()}`;
+    }
+    const parts = [t(lang, "subtype_villa"), `${d.bedrooms || "?"} ${t(lang, "add_bedrooms").toLowerCase()}`];
+    if (d.hasLivingRoom) parts.push(t(lang, "add_living_room").toLowerCase());
+    parts.push(`${d.bathrooms || "?"} ${t(lang, "add_bathrooms").toLowerCase()}`);
+    return parts.join(" · ");
+  }
+  if (listing.type === "chambre") {
+    return d.showerType === "shared" ? t(lang, "shower_shared") + " " + t(lang, "add_shower_type").toLowerCase() : t(lang, "shower_private") + " " + t(lang, "add_shower_type").toLowerCase();
+  }
+  if (listing.type === "appareils") {
+    return t(lang, `appliance_${d.applianceCategory || "autre"}`);
+  }
+  return "";
+}
+
 const UNLOCK_FEE = 4.99;
 
 
@@ -200,8 +221,11 @@ function ListingCard({ listing, unlocked, onOpen, lang, favorited, onToggleFavor
             </Badge>
             <div className="mt-1.5 flex items-center gap-1 text-sm" style={{ color: C.slate }}>
               <MapPin size={13} />
-              <span>{listing.neighborhood ? `${listing.neighborhood}, ` : ""}{listing.city}, {listing.country}</span>
+              <span>{listing.city}, {listing.country}</span>
             </div>
+            {detailsSummary(lang, listing) && (
+              <p className="mt-1 text-xs" style={{ color: C.slate }}>{detailsSummary(lang, listing)}</p>
+            )}
           </div>
         </div>
 
@@ -324,7 +348,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
 
           <div className="flex items-center gap-2">
             <h3 className="text-xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>
-              {listing.neighborhood ? `${listing.neighborhood}, ` : ""}{listing.city}, {listing.country}
+              {listing.city}, {listing.country}
             </h3>
             {listing.verified && (
               <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: "#EAF3EE", color: C.green }}>
@@ -335,6 +359,12 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
           <p className="mt-1 flex items-center gap-1 text-xs" style={{ fontFamily: "'IBM Plex Mono', monospace", color: C.slate }}>
             {t(lang, "modal_ref")} {listing.id}
           </p>
+          {detailsSummary(lang, listing) && (
+            <p className="mt-1.5 text-sm font-medium" style={{ color: C.ink }}>{detailsSummary(lang, listing)}</p>
+          )}
+          {listing.availableFrom && (
+            <p className="mt-1 text-xs" style={{ color: C.slate }}>{t(lang, "add_available_from")} {new Date(listing.availableFrom).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR")}</p>
+          )}
 
           <p className="mt-3 text-sm leading-relaxed" style={{ color: C.ink }}>{listing.desc}</p>
 
@@ -390,6 +420,12 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
                 <Building2 size={15} />
                 <span className="font-semibold">{listing.owner}</span>
               </div>
+              {listing.address && (
+                <div className="mt-1 flex items-center gap-2 text-sm" style={{ color: C.ink }}>
+                  <MapPin size={15} />
+                  <span>{listing.address}, {listing.city}</span>
+                </div>
+              )}
               <div className="mt-1 flex items-center justify-between rounded-lg px-3 py-2" style={{ background: C.card, border: `1px solid ${C.line}` }}>
                 <span className="text-sm" style={{ fontFamily: "'IBM Plex Mono', monospace", color: C.ink }}>{listing.phone}</span>
                 <button onClick={copyPhone} className="clesch-focus" style={{ color: C.slate }}><Copy size={15} /></button>
@@ -414,11 +450,17 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
 
 /* ---------- Add listing form ---------- */
 function AddListingForm({ onSubmit, saving, lang }) {
-  const empty = { owner: "", phone: "", type: "maison", transaction: "location", country: COUNTRIES[0], city: "", neighborhood: "", price: "", desc: "" };
+  const empty = {
+    owner: "", phone: "", type: "maison", transaction: "location", country: COUNTRIES[0], city: "",
+    address: "", price: "", desc: "", availableFrom: "",
+    subtype: "villa", bedrooms: "1", bathrooms: "1", hasLivingRoom: true,
+    aptSubtype: "bilocale", showerType: "private", applianceCategory: "electronique",
+  };
   const [form, setForm] = useState(empty);
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(null);
   const [saveError, setSaveError] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
   const fileInputRef = useRef(null);
 
   // Photos
@@ -503,7 +545,7 @@ function AddListingForm({ onSubmit, saving, lang }) {
     if (!form.owner.trim()) e.owner = t(lang, "add_err_owner");
     if (!form.phone.trim()) e.phone = t(lang, "add_err_phone");
     if (!form.city.trim()) e.city = t(lang, "add_err_city");
-    if (!form.neighborhood.trim()) e.neighborhood = t(lang, "add_err_neighborhood");
+    if (!form.address.trim()) e.address = t(lang, "add_err_address");
     if (!form.price || Number(form.price) <= 0) e.price = t(lang, "add_err_price");
     if (!form.desc.trim()) e.desc = t(lang, "add_err_desc");
     setErrors(e);
@@ -523,7 +565,33 @@ function AddListingForm({ onSubmit, saving, lang }) {
       return;
     }
     const id = "SCH-" + Date.now().toString(36).toUpperCase().slice(-5);
-    const listing = { id, ...form, price: Number(form.price), verified: true, photos };
+
+    let details = {};
+    if (form.type === "maison") {
+      details = form.subtype === "appartement"
+        ? { subtype: "appartement", aptSubtype: form.aptSubtype, bedrooms: form.bedrooms, bathrooms: form.bathrooms }
+        : { subtype: "villa", bedrooms: form.bedrooms, hasLivingRoom: form.hasLivingRoom, bathrooms: form.bathrooms };
+    } else if (form.type === "chambre") {
+      details = { showerType: form.showerType };
+    } else if (form.type === "appareils") {
+      details = { applianceCategory: form.applianceCategory };
+    }
+
+    setGeocoding(true);
+    let lat = null, lng = null;
+    try {
+      const { data: geo } = await supabase.functions.invoke("geocode-address", {
+        body: { address: form.address, city: form.city, country: form.country },
+      });
+      lat = geo?.lat ?? null;
+      lng = geo?.lng ?? null;
+    } catch { /* geocoding failure isn't blocking — the listing still gets published */ }
+    setGeocoding(false);
+
+    const listing = {
+      id, ...form, price: Number(form.price), verified: true, photos, details,
+      lat, lng, availableFrom: form.type === "maison" && form.transaction === "location" ? form.availableFrom : null,
+    };
     setSaveError(false);
     const ok = await onSubmit(listing);
     if (ok) {
@@ -602,13 +670,102 @@ function AddListingForm({ onSubmit, saving, lang }) {
           {errors.city && <p className="mt-1 text-xs" style={{ color: C.rust }}>{errors.city}</p>}
         </div>
 
-        <div>
-          <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_neighborhood")}</label>
-          <input value={form.neighborhood} onChange={(e) => set("neighborhood", e.target.value)}
+        <div className="col-span-2">
+          <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_address")}</label>
+          <input value={form.address} onChange={(e) => set("address", e.target.value)}
             className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
-            style={{ borderColor: errors.neighborhood ? C.rust : C.line }} placeholder={t(lang, "add_neighborhood_ph")} />
-          {errors.neighborhood && <p className="mt-1 text-xs" style={{ color: C.rust }}>{errors.neighborhood}</p>}
+            style={{ borderColor: errors.address ? C.rust : C.line }} placeholder={t(lang, "add_address_ph")} />
+          {errors.address && <p className="mt-1 text-xs" style={{ color: C.rust }}>{errors.address}</p>}
+          <p className="mt-1 text-xs" style={{ color: C.slate }}>{t(lang, "add_address_note")}</p>
         </div>
+
+        {/* Type-specific characteristics */}
+        {form.type === "maison" && (
+          <div className="col-span-2 rounded-lg p-3.5" style={{ background: C.paper, border: `1px solid ${C.line}` }}>
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_house_subtype")}</label>
+            <div className="mt-1 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => set("subtype", "villa")}
+                className="clesch-focus rounded-lg border px-3 py-2 text-sm font-medium"
+                style={{ borderColor: form.subtype === "villa" ? C.gold : C.line, background: form.subtype === "villa" ? "#FBF3E7" : C.card, color: C.ink }}>
+                {t(lang, "subtype_villa")}
+              </button>
+              <button type="button" onClick={() => set("subtype", "appartement")}
+                className="clesch-focus rounded-lg border px-3 py-2 text-sm font-medium"
+                style={{ borderColor: form.subtype === "appartement" ? C.gold : C.line, background: form.subtype === "appartement" ? "#FBF3E7" : C.card, color: C.ink }}>
+                {t(lang, "subtype_appartement")}
+              </button>
+            </div>
+
+            {form.subtype === "appartement" && (
+              <div className="mt-2.5">
+                <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_apt_subtype")}</label>
+                <Select value={form.aptSubtype} onChange={(e) => set("aptSubtype", e.target.value)}>
+                  <option value="monolocale">{t(lang, "apt_monolocale")}</option>
+                  <option value="bilocale">{t(lang, "apt_bilocale")}</option>
+                  <option value="trilocale">{t(lang, "apt_trilocale")}</option>
+                  <option value="quadrilocale">{t(lang, "apt_quadrilocale")}</option>
+                </Select>
+              </div>
+            )}
+
+            <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_bedrooms")}</label>
+                <input type="number" min="0" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value)}
+                  className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line, background: C.card }} />
+              </div>
+              <div>
+                <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_bathrooms")}</label>
+                <input type="number" min="0" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value)}
+                  className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line, background: C.card }} />
+              </div>
+            </div>
+
+            {form.subtype === "villa" && (
+              <label className="clesch-focus mt-2.5 flex items-center gap-2 text-sm" style={{ color: C.ink }}>
+                <input type="checkbox" checked={form.hasLivingRoom} onChange={(e) => set("hasLivingRoom", e.target.checked)} />
+                {t(lang, "add_living_room")}
+              </label>
+            )}
+
+            {form.transaction === "location" && (
+              <div className="mt-2.5">
+                <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_available_from")}</label>
+                <input type="date" value={form.availableFrom} onChange={(e) => set("availableFrom", e.target.value)}
+                  className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line, background: C.card }} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {form.type === "chambre" && (
+          <div className="col-span-2 rounded-lg p-3.5" style={{ background: C.paper, border: `1px solid ${C.line}` }}>
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_shower_type")}</label>
+            <div className="mt-1 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => set("showerType", "private")}
+                className="clesch-focus rounded-lg border px-3 py-2 text-sm font-medium"
+                style={{ borderColor: form.showerType === "private" ? C.gold : C.line, background: form.showerType === "private" ? "#FBF3E7" : C.card, color: C.ink }}>
+                {t(lang, "shower_private")}
+              </button>
+              <button type="button" onClick={() => set("showerType", "shared")}
+                className="clesch-focus rounded-lg border px-3 py-2 text-sm font-medium"
+                style={{ borderColor: form.showerType === "shared" ? C.gold : C.line, background: form.showerType === "shared" ? "#FBF3E7" : C.card, color: C.ink }}>
+                {t(lang, "shower_shared")}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {form.type === "appareils" && (
+          <div className="col-span-2 rounded-lg p-3.5" style={{ background: C.paper, border: `1px solid ${C.line}` }}>
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_appliance_category")}</label>
+            <Select value={form.applianceCategory} onChange={(e) => set("applianceCategory", e.target.value)}>
+              <option value="electronique">{t(lang, "appliance_electronique")}</option>
+              <option value="electromenager">{t(lang, "appliance_electromenager")}</option>
+              <option value="autre">{t(lang, "appliance_autre")}</option>
+            </Select>
+          </div>
+        )}
 
         <div className="col-span-2">
           <label className="text-xs font-medium" style={{ color: C.slate }}>
@@ -726,11 +883,11 @@ function AddListingForm({ onSubmit, saving, lang }) {
 
       {gateError && <p className="mt-3 text-sm" style={{ color: C.rust }}>{gateError}</p>}
 
-      <button onClick={handleSubmit} disabled={saving}
+      <button onClick={handleSubmit} disabled={saving || geocoding}
         className="clesch-focus mt-4 flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white"
-        style={{ background: C.ink, opacity: saving ? 0.6 : 1 }}>
-        {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-        {saving ? t(lang, "add_submitting") : t(lang, "add_submit")}
+        style={{ background: C.ink, opacity: (saving || geocoding) ? 0.6 : 1 }}>
+        {(saving || geocoding) ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+        {saving ? t(lang, "add_submitting") : geocoding ? t(lang, "add_locating") : t(lang, "add_submit")}
       </button>
     </div>
   );
@@ -820,10 +977,16 @@ function ListingsMap({ listings, lang, onOpen }) {
     markersRef.current.forEach((m) => mapRef.current.removeLayer(m));
     markersRef.current = [];
     listings.forEach((l) => {
-      const base = COUNTRY_COORDS[l.country];
-      if (!base) return;
-      const [dLat, dLng] = hashJitter(l.id);
-      const marker = window.L.marker([base[0] + dLat, base[1] + dLng]).addTo(mapRef.current);
+      let position;
+      if (l.lat != null && l.lng != null) {
+        position = [l.lat, l.lng];
+      } else {
+        const base = COUNTRY_COORDS[l.country];
+        if (!base) return;
+        const [dLat, dLng] = hashJitter(l.id);
+        position = [base[0] + dLat, base[1] + dLng];
+      }
+      const marker = window.L.marker(position).addTo(mapRef.current);
       const label = `${t(lang, `type_${l.type}`)} · ${t(lang, `trans_${l.transaction}`)} — ${l.city}, ${l.country}<br/><strong>${formatPrice(l.price)} €</strong>`;
       marker.bindPopup(label);
       marker.on("click", () => marker.openPopup());
@@ -1504,10 +1667,14 @@ function ContactModal({ defaultEmail, onClose, lang }) {
 /* ---------- Owner dashboard (views + unlocks per listing) ---------- */
 /* ---------- Edit an existing listing (owner only) ---------- */
 function EditListingModal({ listing, onClose, onSaved, lang }) {
+  const d = listing.details || {};
   const [form, setForm] = useState({
     type: listing.type, transaction: listing.transaction, country: listing.country,
-    city: listing.city, neighborhood: listing.neighborhood || "", price: listing.price,
-    desc: listing.description,
+    city: listing.city, address: listing.address || "", price: listing.price,
+    desc: listing.description, availableFrom: listing.available_from || "",
+    subtype: d.subtype || "villa", aptSubtype: d.aptSubtype || "bilocale",
+    bedrooms: d.bedrooms || "1", bathrooms: d.bathrooms || "1", hasLivingRoom: d.hasLivingRoom ?? true,
+    showerType: d.showerType || "private", applianceCategory: d.applianceCategory || "electronique",
   });
   const [photos, setPhotos] = useState(listing.photos || []);
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -1539,10 +1706,30 @@ function EditListingModal({ listing, onClose, onSaved, lang }) {
     setSaving(true);
     setError("");
     try {
+      let details = {};
+      if (form.type === "maison") {
+        details = form.subtype === "appartement"
+          ? { subtype: "appartement", aptSubtype: form.aptSubtype, bedrooms: form.bedrooms, bathrooms: form.bathrooms }
+          : { subtype: "villa", bedrooms: form.bedrooms, hasLivingRoom: form.hasLivingRoom, bathrooms: form.bathrooms };
+      } else if (form.type === "chambre") {
+        details = { showerType: form.showerType };
+      } else if (form.type === "appareils") {
+        details = { applianceCategory: form.applianceCategory };
+      }
+
+      let lat = listing.lat, lng = listing.lng;
+      if (form.address !== (listing.address || "") || form.city !== listing.city) {
+        const { data: geo } = await supabase.functions.invoke("geocode-address", {
+          body: { address: form.address, city: form.city, country: form.country },
+        });
+        if (geo?.lat) { lat = geo.lat; lng = geo.lng; }
+      }
+
       const { error: err } = await supabase.from("listings").update({
         type: form.type, transaction: form.transaction, country: form.country,
-        city: form.city, neighborhood: form.neighborhood, price: Number(form.price),
-        description: form.desc, photos,
+        city: form.city, address: form.address, price: Number(form.price),
+        description: form.desc, photos, details, lat, lng,
+        available_from: form.type === "maison" && form.transaction === "location" ? (form.availableFrom || null) : null,
       }).eq("id", listing.id);
       if (err) throw err;
       setSaved(true);
@@ -1586,11 +1773,74 @@ function EditListingModal({ listing, onClose, onSaved, lang }) {
             <input value={form.city} onChange={(e) => set("city", e.target.value)}
               className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
           </div>
-          <div>
-            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_neighborhood")}</label>
-            <input value={form.neighborhood} onChange={(e) => set("neighborhood", e.target.value)}
+          <div className="col-span-2">
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_address")}</label>
+            <input value={form.address} onChange={(e) => set("address", e.target.value)}
               className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
           </div>
+
+          {form.type === "maison" && (
+            <div className="col-span-2 rounded-lg p-3.5" style={{ background: C.paper, border: `1px solid ${C.line}` }}>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => set("subtype", "villa")}
+                  className="clesch-focus rounded-lg border px-3 py-2 text-sm font-medium"
+                  style={{ borderColor: form.subtype === "villa" ? C.gold : C.line, background: form.subtype === "villa" ? "#FBF3E7" : C.card, color: C.ink }}>
+                  {t(lang, "subtype_villa")}
+                </button>
+                <button type="button" onClick={() => set("subtype", "appartement")}
+                  className="clesch-focus rounded-lg border px-3 py-2 text-sm font-medium"
+                  style={{ borderColor: form.subtype === "appartement" ? C.gold : C.line, background: form.subtype === "appartement" ? "#FBF3E7" : C.card, color: C.ink }}>
+                  {t(lang, "subtype_appartement")}
+                </button>
+              </div>
+              {form.subtype === "appartement" && (
+                <Select value={form.aptSubtype} onChange={(e) => set("aptSubtype", e.target.value)}>
+                  <option value="monolocale">{t(lang, "apt_monolocale")}</option>
+                  <option value="bilocale">{t(lang, "apt_bilocale")}</option>
+                  <option value="trilocale">{t(lang, "apt_trilocale")}</option>
+                  <option value="quadrilocale">{t(lang, "apt_quadrilocale")}</option>
+                </Select>
+              )}
+              <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+                <input type="number" min="0" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value)}
+                  placeholder={t(lang, "add_bedrooms")}
+                  className="clesch-focus rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line, background: C.card }} />
+                <input type="number" min="0" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value)}
+                  placeholder={t(lang, "add_bathrooms")}
+                  className="clesch-focus rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line, background: C.card }} />
+              </div>
+              {form.transaction === "location" && (
+                <input type="date" value={form.availableFrom} onChange={(e) => set("availableFrom", e.target.value)}
+                  className="clesch-focus mt-2.5 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line, background: C.card }} />
+              )}
+            </div>
+          )}
+
+          {form.type === "chambre" && (
+            <div className="col-span-2 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => set("showerType", "private")}
+                className="clesch-focus rounded-lg border px-3 py-2 text-sm font-medium"
+                style={{ borderColor: form.showerType === "private" ? C.gold : C.line, color: C.ink }}>
+                {t(lang, "shower_private")}
+              </button>
+              <button type="button" onClick={() => set("showerType", "shared")}
+                className="clesch-focus rounded-lg border px-3 py-2 text-sm font-medium"
+                style={{ borderColor: form.showerType === "shared" ? C.gold : C.line, color: C.ink }}>
+                {t(lang, "shower_shared")}
+              </button>
+            </div>
+          )}
+
+          {form.type === "appareils" && (
+            <div className="col-span-2">
+              <Select value={form.applianceCategory} onChange={(e) => set("applianceCategory", e.target.value)}>
+                <option value="electronique">{t(lang, "appliance_electronique")}</option>
+                <option value="electromenager">{t(lang, "appliance_electromenager")}</option>
+                <option value="autre">{t(lang, "appliance_autre")}</option>
+              </Select>
+            </div>
+          )}
+
           <div>
             <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_price")}</label>
             <input type="number" min="0" value={form.price} onChange={(e) => set("price", e.target.value)}
@@ -1649,6 +1899,7 @@ function OwnerDashboard({ lang }) {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // full listing row being edited, or null
   const [deletingId, setDeletingId] = useState(null);
+  const [togglingId, setTogglingId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1669,6 +1920,15 @@ function OwnerDashboard({ lang }) {
     setDeletingId(id);
     await supabase.from("listings").delete().eq("id", id);
     setDeletingId(null);
+    load();
+  }
+
+  async function toggleStatus(id, currentStatus) {
+    setTogglingId(id);
+    await supabase.from("listings").update({
+      status: currentStatus === "active" ? "unavailable" : "active",
+    }).eq("id", id);
+    setTogglingId(null);
     load();
   }
 
@@ -1695,23 +1955,33 @@ function OwnerDashboard({ lang }) {
                 <th className="px-4 py-2.5 text-right font-medium">{t(lang, "dash_col_price")}</th>
                 <th className="px-4 py-2.5 text-right font-medium">{t(lang, "dash_col_views")}</th>
                 <th className="px-4 py-2.5 text-right font-medium">{t(lang, "dash_col_unlocks")}</th>
+                <th className="px-4 py-2.5 text-center font-medium">{t(lang, "dash_status")}</th>
                 <th className="px-4 py-2.5 text-right font-medium">{t(lang, "dash_col_actions")}</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} style={{ borderTop: `1px solid ${C.line}` }}>
+                <tr key={r.id} style={{ borderTop: `1px solid ${C.line}`, opacity: r.status === "unavailable" ? 0.6 : 1 }}>
                   <td className="px-4 py-2.5">
                     <div style={{ color: C.ink }}>
-                      {t(lang, `type_${r.type}`)} · {t(lang, `trans_${r.transaction}`)} — {r.neighborhood ? `${r.neighborhood}, ` : ""}{r.city}
+                      {t(lang, `type_${r.type}`)} · {t(lang, `trans_${r.transaction}`)} — {r.city}
                     </div>
                     <div className="text-xs" style={{ color: C.slate, fontFamily: "'IBM Plex Mono', monospace" }}>{r.id}</div>
                   </td>
                   <td className="px-4 py-2.5 text-right" style={{ color: C.ink }}>{formatPrice(r.price)} €</td>
                   <td className="px-4 py-2.5 text-right" style={{ color: C.ink }}>{r.views_count}</td>
                   <td className="px-4 py-2.5 text-right font-semibold" style={{ color: C.green }}>{r.unlocks_count}</td>
+                  <td className="px-4 py-2.5 text-center">
+                    <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: r.status === "active" ? "#EAF3EE" : "#F7EAE6", color: r.status === "active" ? C.green : C.rust }}>
+                      {r.status === "active" ? t(lang, "dash_active") : t(lang, "dash_unavailable")}
+                    </span>
+                  </td>
                   <td className="px-4 py-2.5">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <button disabled={togglingId === r.id} onClick={() => toggleStatus(r.id, r.status)}
+                        className="clesch-focus rounded-lg border px-2.5 py-1 text-xs font-medium disabled:opacity-60" style={{ borderColor: C.line, color: C.ink }}>
+                        {r.status === "active" ? t(lang, "dash_mark_unavailable") : t(lang, "dash_mark_available")}
+                      </button>
                       <button onClick={() => openEdit(r.id)} className="clesch-focus rounded-lg border px-2.5 py-1 text-xs font-medium" style={{ borderColor: C.line, color: C.ink }}>
                         {t(lang, "dash_edit")}
                       </button>
@@ -1849,13 +2119,17 @@ export default function CleSchengen() {
           transaction: l.transaction,
           country: l.country,
           city: l.city,
-          neighborhood: l.neighborhood,
+          address: l.address,
+          lat: l.lat,
+          lng: l.lng,
           price: l.price,
           owner: l.owner_name,
           phone: l.phone,
           desc: l.description,
           verified: true,
           photos: l.photos || [],
+          details: l.details || {},
+          availableFrom: l.available_from,
           ownerId: l.owner_id,
           contactVisible: l.phone !== null,
         }))
@@ -1958,12 +2232,16 @@ export default function CleSchengen() {
       transaction: listing.transaction,
       country: listing.country,
       city: listing.city,
-      neighborhood: listing.neighborhood,
+      address: listing.address,
+      lat: listing.lat,
+      lng: listing.lng,
       price: Number(listing.price),
       owner_name: listing.owner,
       phone: listing.phone,
       description: listing.desc,
       photos: listing.photos || [],
+      details: listing.details || {},
+      available_from: listing.availableFrom || null,
     });
     setSaving(false);
     if (error) return false;
@@ -1991,7 +2269,7 @@ export default function CleSchengen() {
       if (fCountry !== "all" && l.country !== fCountry) return false;
       if (appliedPriceMin !== "" && Number(l.price) < Number(appliedPriceMin)) return false;
       if (appliedPriceMax !== "" && Number(l.price) > Number(appliedPriceMax)) return false;
-      if (q && !(`${l.neighborhood || ""} ${l.city} ${l.country} ${l.desc}`.toLowerCase().includes(q.toLowerCase()))) return false;
+      if (q && !(`${l.city} ${l.country} ${l.desc}`.toLowerCase().includes(q.toLowerCase()))) return false;
       return true;
     });
   }, [listings, fType, fTrans, fCountry, q, appliedPriceMin, appliedPriceMax]);
