@@ -38,6 +38,7 @@ const fr = {
   cookie_banner_text: "Ce site utilise le stockage local de votre navigateur (connexion, langue, statistiques anonymes). Aucun cookie publicitaire tiers n'est utilisé.",
   cookie_banner_link: "En savoir plus", cookie_banner_accept: "J'ai compris",
   footer_terms: "Conditions d'utilisation", footer_privacy: "Confidentialité",
+  footer_rights: "Tous droits réservés.",
 
   history_title: "Mes contacts débloqués",
   history_subtitle: "Ces contacts restent enregistrés sur ton compte, même si tu reviens plus tard.",
@@ -238,6 +239,7 @@ const en = {
   cookie_banner_text: "This site uses your browser's local storage (login, language, anonymous statistics). No third-party advertising cookies are used.",
   cookie_banner_link: "Learn more", cookie_banner_accept: "Got it",
   footer_terms: "Terms of Service", footer_privacy: "Privacy",
+  footer_rights: "All rights reserved.",
 
   history_title: "My unlocked contacts",
   history_subtitle: "These contacts stay saved to your account, even if you come back later.",

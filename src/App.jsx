@@ -3043,9 +3043,10 @@ export default function CleSchengen() {
 
       <footer className="mx-auto max-w-5xl px-5 pb-10 pt-4 text-xs" style={{ color: C.slate }}>
         <p>{t(lang, "footer_tagline")}</p>
-        <div className="mt-2 flex gap-4">
+        <div className="mt-2 flex flex-wrap items-center gap-4">
           <button onClick={() => setTab("terms")} className="clesch-focus underline">{t(lang, "footer_terms")}</button>
           <button onClick={() => setTab("privacy")} className="clesch-focus underline">{t(lang, "footer_privacy")}</button>
+          <span>© {new Date().getFullYear()} CléSchengen. {t(lang, "footer_rights")}</span>
         </div>
       </footer>
 
