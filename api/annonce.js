@@ -57,6 +57,7 @@ export default async function handler(req, res) {
   `;
 
   html = html.replace(/<title>.*?<\/title>/, `<title>${escape(title)}</title>`);
+  html = html.replace(/<link rel="canonical"[^>]*\/>/, `<link rel="canonical" href="https://cleschengen.com/annonce/${escape(id)}" />`);
   html = html.replace("</head>", `${metaTags}</head>`);
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
