@@ -69,6 +69,8 @@ const fr = {
   favorites_empty: "Tu n'as encore sauvegardé aucune annonce. Clique sur le cœur d'une annonce pour l'ajouter ici.",
   favorites_login_prompt: "Connecte-toi pour sauvegarder des annonces en favoris.",
 
+  filter_price_min: "Prix min", filter_price_max: "Prix max", search_button: "Rechercher",
+
   footer_tagline: "CléSchengen — les annonces sont stockées dans une base partagée. Les coordonnées des propriétaires ne sont révélées qu'après paiement, et la publication d'annonces est réservée aux comptes propriétaires vérifiés.",
 
   contact_title: "Contactez-nous",
@@ -225,6 +227,8 @@ const en = {
   favorites_subtitle: "The listings you've saved, easy to find again.",
   favorites_empty: "You haven't saved any listing yet. Click the heart on a listing to add it here.",
   favorites_login_prompt: "Log in to save listings as favourites.",
+
+  filter_price_min: "Min price", filter_price_max: "Max price", search_button: "Search",
 
   footer_tagline: "CléSchengen — listings are stored in a shared database. Owners' contact details are only revealed after payment, and publishing listings is reserved for verified owner accounts.",
 

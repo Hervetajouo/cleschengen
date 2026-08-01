@@ -1664,6 +1664,10 @@ export default function CleSchengen() {
   const [fType, setFType] = useState("all");
   const [fTrans, setFTrans] = useState("all");
   const [fCountry, setFCountry] = useState("all");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [appliedPriceMin, setAppliedPriceMin] = useState("");
+  const [appliedPriceMax, setAppliedPriceMax] = useState("");
 
   /* ---- Auth: track session + load matching profile row ---- */
   const loadProfile = useCallback(async (uid) => {
@@ -1843,10 +1847,12 @@ export default function CleSchengen() {
       if (fType !== "all" && l.type !== fType) return false;
       if (fTrans !== "all" && l.transaction !== fTrans) return false;
       if (fCountry !== "all" && l.country !== fCountry) return false;
+      if (appliedPriceMin !== "" && Number(l.price) < Number(appliedPriceMin)) return false;
+      if (appliedPriceMax !== "" && Number(l.price) > Number(appliedPriceMax)) return false;
       if (q && !(`${l.neighborhood || ""} ${l.city} ${l.country} ${l.desc}`.toLowerCase().includes(q.toLowerCase()))) return false;
       return true;
     });
-  }, [listings, fType, fTrans, fCountry, q]);
+  }, [listings, fType, fTrans, fCountry, q, appliedPriceMin, appliedPriceMax]);
 
   const unlockedList = listings.filter((l) => unlocked[l.id]);
   const favoritesList = listings.filter((l) => favorites[l.id]);
@@ -1969,6 +1975,25 @@ export default function CleSchengen() {
                 <option value="all">{t(lang, "filter_all_country")}</option>
                 {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </Select>
+              <input
+                type="number" min="0" value={priceMin} onChange={(e) => setPriceMin(e.target.value)}
+                placeholder={t(lang, "filter_price_min")}
+                className="clesch-focus w-28 rounded-lg border py-2 px-3 text-sm outline-none"
+                style={{ borderColor: C.line, background: C.card }}
+              />
+              <input
+                type="number" min="0" value={priceMax} onChange={(e) => setPriceMax(e.target.value)}
+                placeholder={t(lang, "filter_price_max")}
+                className="clesch-focus w-28 rounded-lg border py-2 px-3 text-sm outline-none"
+                style={{ borderColor: C.line, background: C.card }}
+              />
+              <button
+                onClick={() => { setAppliedPriceMin(priceMin); setAppliedPriceMax(priceMax); }}
+                className="clesch-focus flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white"
+                style={{ background: C.ink }}
+              >
+                <Search size={14} /> {t(lang, "search_button")}
+              </button>
             </div>
 
             {dbLoading && (
