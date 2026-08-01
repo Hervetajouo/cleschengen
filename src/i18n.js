@@ -48,6 +48,9 @@ const fr = {
   premium_benefit_1: "Publication libre, sans attendre la vérification d'identité",
   premium_benefit_2: "Contacts débloqués gratuitement et sans limite",
   premium_benefit_3: "Badge Premium sur tes annonces",
+  plan_weekly: "Hebdomadaire", plan_weekly_tagline: "Pour tester la visibilité sur une annonce ponctuelle.",
+  plan_monthly: "Mensuel", plan_monthly_tagline: "Le choix le plus courant pour un propriétaire actif.",
+  plan_yearly: "Annuel", plan_yearly_tagline: "Le tarif le plus avantageux pour une présence continue.",
 
   footer_tagline: "CléSchengen — les annonces sont stockées dans une base partagée. Les coordonnées des propriétaires ne sont révélées qu'après paiement, et la publication d'annonces est réservée aux comptes propriétaires vérifiés.",
 
@@ -185,6 +188,9 @@ const en = {
   premium_benefit_1: "Free publishing, no waiting for identity verification",
   premium_benefit_2: "Contacts unlocked for free, with no limit",
   premium_benefit_3: "Premium badge on your listings",
+  plan_weekly: "Weekly", plan_weekly_tagline: "To test visibility on a one-off listing.",
+  plan_monthly: "Monthly", plan_monthly_tagline: "The most popular choice for an active owner.",
+  plan_yearly: "Yearly", plan_yearly_tagline: "The best rate for a continuous presence.",
 
   footer_tagline: "CléSchengen — listings are stored in a shared database. Owners' contact details are only revealed after payment, and publishing listings is reserved for verified owner accounts.",
 

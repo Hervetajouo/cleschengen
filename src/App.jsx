@@ -2005,9 +2005,9 @@ export default function CleSchengen() {
                 <div key={p.key} className="flex flex-col rounded-xl p-5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
                   <div className="flex items-center gap-2" style={{ color: C.gold }}>
                     <Sparkles size={16} />
-                    <span className="text-base font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{p.label}</span>
+                    <span className="text-base font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, `plan_${p.key}`)}</span>
                   </div>
-                  <p className="mt-2 flex-1 text-sm" style={{ color: C.slate }}>{p.tagline}</p>
+                  <p className="mt-2 flex-1 text-sm" style={{ color: C.slate }}>{t(lang, `plan_${p.key}_tagline`)}</p>
                   <ul className="mt-3 space-y-1 text-xs" style={{ color: C.slate }}>
                     <li>• {t(lang, "premium_benefit_1")}</li>
                     <li>• {t(lang, "premium_benefit_2")}</li>
