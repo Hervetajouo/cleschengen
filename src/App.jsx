@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { supabase } from "./supabaseClient.js";
 import { LANGS, t } from "./i18n.js";
+import { COUNTRY_GUIDES, GENERIC_GUIDE } from "./guides.js";
+import { COUNTRY_COORDS } from "./mapData.js";
 
 /* ---------- Design tokens ---------- */
 const C = {
@@ -735,6 +737,114 @@ function AddListingForm({ onSubmit, saving, lang }) {
 }
 
 /* ---------- Dedicated onboarding tab ---------- */
+/* ---------- Country guides ---------- */
+function CountryGuides({ lang }) {
+  const [selected, setSelected] = useState(COUNTRIES[0]);
+  const guide = COUNTRY_GUIDES[selected]?.[lang] || COUNTRY_GUIDES[selected]?.fr;
+  const isGeneric = !COUNTRY_GUIDES[selected];
+  const shown = guide || GENERIC_GUIDE[lang] || GENERIC_GUIDE.fr;
+
+  return (
+    <div>
+      <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>CléSchengen</p>
+      <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "guides_title")}</h1>
+      <p className="mt-2 max-w-2xl text-sm" style={{ color: C.slate }}>{t(lang, "guides_subtitle")}</p>
+
+      <div className="mt-5 max-w-xs">
+        <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "guides_select_country")}</label>
+        <Select value={selected} onChange={(e) => setSelected(e.target.value)}>
+          {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </Select>
+      </div>
+
+      {isGeneric && (
+        <p className="mt-3 text-xs italic" style={{ color: C.slate }}>{t(lang, "guides_generic_notice")}</p>
+      )}
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: C.gold }}>{t(lang, "guides_documents")}</p>
+          <p className="mt-1.5 text-sm" style={{ color: C.ink }}>{shown.documents}</p>
+        </div>
+        <div className="rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: C.gold }}>{t(lang, "guides_deposit")}</p>
+          <p className="mt-1.5 text-sm" style={{ color: C.ink }}>{shown.deposit}</p>
+        </div>
+        <div className="rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: C.gold }}>{t(lang, "guides_notice")}</p>
+          <p className="mt-1.5 text-sm" style={{ color: C.ink }}>{shown.notice}</p>
+        </div>
+        <div className="rounded-xl p-4" style={{ background: "#FBF3E7", border: `1px solid ${C.line}` }}>
+          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: C.gold }}>{t(lang, "guides_tip")}</p>
+          <p className="mt-1.5 text-sm" style={{ color: C.ink }}>{shown.tip}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Interactive map (Leaflet, loaded via CDN — see index.html) ---------- */
+function hashJitter(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 100000;
+  // Deterministic pseudo-random offset in [-0.35, 0.35] degrees, different for lat/lng.
+  const a = ((h % 700) / 1000) - 0.35;
+  const b = (((h * 7) % 700) / 1000) - 0.35;
+  return [a, b];
+}
+
+function ListingsMap({ listings, lang, onOpen }) {
+  const mapRef = useRef(null);
+  const containerRef = useRef(null);
+  const markersRef = useRef([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    function init() {
+      if (cancelled || !window.L || !containerRef.current || mapRef.current) return;
+      mapRef.current = window.L.map(containerRef.current).setView([50, 10], 4);
+      window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors",
+        maxZoom: 18,
+      }).addTo(mapRef.current);
+    }
+    if (window.L) init();
+    else {
+      const interval = setInterval(() => { if (window.L) { init(); clearInterval(interval); } }, 200);
+      return () => { cancelled = true; clearInterval(interval); };
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mapRef.current || !window.L) return;
+    markersRef.current.forEach((m) => mapRef.current.removeLayer(m));
+    markersRef.current = [];
+    listings.forEach((l) => {
+      const base = COUNTRY_COORDS[l.country];
+      if (!base) return;
+      const [dLat, dLng] = hashJitter(l.id);
+      const marker = window.L.marker([base[0] + dLat, base[1] + dLng]).addTo(mapRef.current);
+      const label = `${t(lang, `type_${l.type}`)} · ${t(lang, `trans_${l.transaction}`)} — ${l.city}, ${l.country}<br/><strong>${formatPrice(l.price)} €</strong>`;
+      marker.bindPopup(label);
+      marker.on("click", () => marker.openPopup());
+      marker.on("popupopen", () => {
+        const popupEl = marker.getPopup().getElement();
+        if (popupEl && !popupEl.querySelector(".clesch-map-open")) {
+          const b = document.createElement("button");
+          b.className = "clesch-map-open";
+          b.textContent = t(lang, "card_view");
+          b.style.cssText = `margin-top:6px;background:${C.gold};color:white;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;`;
+          b.onclick = () => onOpen(l);
+          popupEl.querySelector(".leaflet-popup-content").appendChild(b);
+        }
+      });
+      markersRef.current.push(marker);
+    });
+  }, [listings, lang, onOpen]);
+
+  return <div ref={containerRef} style={{ height: "500px", borderRadius: "12px", overflow: "hidden", border: `1px solid ${C.line}` }} />;
+}
+
 function HowItWorks({ goTo, lang }) {
   const steps = [
     { n: "01", title: t(lang, "how_step1_title"), body: t(lang, "how_step1_body") },
@@ -1667,6 +1777,36 @@ export default function CleSchengen() {
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
   const [appliedPriceMin, setAppliedPriceMin] = useState("");
+  const [savedSearches, setSavedSearches] = useState([]);
+  const [alertSaved, setAlertSaved] = useState(false);
+
+  const loadSavedSearches = useCallback(async (uid) => {
+    if (!uid) { setSavedSearches([]); return; }
+    const { data } = await supabase.from("saved_searches").select("*").eq("user_id", uid).order("created_at", { ascending: false });
+    setSavedSearches(data || []);
+  }, []);
+
+  async function createAlert() {
+    if (!session) { setAuthModal("login"); return; }
+    setAlertSaved(false);
+    await supabase.from("saved_searches").insert({
+      user_id: session.user.id,
+      email: session.user.email,
+      type: fType,
+      transaction: fTrans,
+      country: fCountry,
+      price_min: appliedPriceMin || null,
+      price_max: appliedPriceMax || null,
+    });
+    setAlertSaved(true);
+    loadSavedSearches(session.user.id);
+  }
+
+  async function deleteAlert(id) {
+    await supabase.from("saved_searches").delete().eq("id", id);
+    loadSavedSearches(session?.user?.id);
+  }
+
   const [appliedPriceMax, setAppliedPriceMax] = useState("");
 
   /* ---- Auth: track session + load matching profile row ---- */
@@ -1769,6 +1909,7 @@ export default function CleSchengen() {
   useEffect(() => { loadListings(); }, [loadListings]);
   useEffect(() => { loadUnlocks(session?.user?.id); }, [session, loadUnlocks]);
   useEffect(() => { loadFavorites(session?.user?.id); }, [session, loadFavorites]);
+  useEffect(() => { loadSavedSearches(session?.user?.id); }, [session, loadSavedSearches]);
   useEffect(() => { loadSubscription(session?.user?.id); }, [session, loadSubscription]);
 
   /* ---- Handle the redirect back from Stripe Checkout ---- */
@@ -1827,6 +1968,7 @@ export default function CleSchengen() {
     setSaving(false);
     if (error) return false;
     await loadListings();
+    supabase.functions.invoke("notify-saved-searches", { body: { listingId: id } }).then(null, () => {});
     setTab("browse");
     return true;
   }
@@ -1862,7 +2004,9 @@ export default function CleSchengen() {
   const NAV_ITEMS = [
     ["how", t(lang, "nav_how")],
     ["browse", t(lang, "nav_browse")],
+    ["map", t(lang, "nav_map")],
     ["add", t(lang, "nav_post")],
+    ["guides", t(lang, "nav_guides")],
     ["premium", t(lang, "nav_premium")],
   ];
 
@@ -1994,7 +2138,41 @@ export default function CleSchengen() {
               >
                 <Search size={14} /> {t(lang, "search_button")}
               </button>
+              <button
+                onClick={createAlert}
+                className="clesch-focus flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold"
+                style={{ borderColor: C.gold, color: C.gold }}
+              >
+                <Mail size={14} /> {t(lang, "alert_create")}
+              </button>
             </div>
+
+            {alertSaved && (
+              <p className="mb-4 flex items-center gap-1.5 text-xs" style={{ color: C.green }}>
+                <CheckCircle2 size={13} /> {t(lang, "alert_saved")}
+              </p>
+            )}
+
+            {savedSearches.length > 0 && (
+              <div className="mb-5 rounded-xl p-3" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+                <p className="text-xs font-semibold" style={{ color: C.ink }}>{t(lang, "alert_my_alerts")}</p>
+                <div className="mt-2 space-y-1.5">
+                  {savedSearches.map((s) => (
+                    <div key={s.id} className="flex items-center justify-between text-xs" style={{ color: C.slate }}>
+                      <span>
+                        {s.type && s.type !== "all" ? t(lang, `type_${s.type}`) : t(lang, "alert_summary_any")} ·{" "}
+                        {s.transaction && s.transaction !== "all" ? t(lang, `trans_${s.transaction}`) : t(lang, "alert_summary_any")} ·{" "}
+                        {s.country && s.country !== "all" ? s.country : t(lang, "alert_summary_any")}
+                        {(s.price_min || s.price_max) ? ` · ${s.price_min || "0"}–${s.price_max || "∞"} €` : ""}
+                      </span>
+                      <button onClick={() => deleteAlert(s.id)} className="clesch-focus" style={{ color: C.rust }}>
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {dbLoading && (
               <div className="flex items-center justify-center gap-2 py-16 text-sm" style={{ color: C.slate }}>
@@ -2066,6 +2244,18 @@ export default function CleSchengen() {
             )}
           </div>
         )}
+
+        {tab === "map" && (
+          <div>
+            <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "browse_title")}</p>
+            <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "nav_map")}</h1>
+            <div className="mt-5">
+              <ListingsMap listings={listings} lang={lang} onOpen={setActive} />
+            </div>
+          </div>
+        )}
+
+        {tab === "guides" && <CountryGuides lang={lang} />}
 
         {tab === "premium" && (
           <div>

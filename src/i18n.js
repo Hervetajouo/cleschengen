@@ -71,6 +71,18 @@ const fr = {
 
   filter_price_min: "Prix min", filter_price_max: "Prix max", search_button: "Rechercher",
 
+  nav_guides: "Guides pays", guides_title: "Guides pratiques par pays",
+  guides_subtitle: "Ce qu'il faut savoir avant de louer dans chaque pays de l'espace Schengen.",
+  guides_select_country: "Choisis un pays", guides_documents: "Documents demandés",
+  guides_deposit: "Dépôt de garantie", guides_notice: "Préavis de départ", guides_tip: "Bon à savoir",
+  guides_generic_notice: "Guide général (pas encore de fiche détaillée pour ce pays).",
+
+  nav_map: "Carte",
+
+  alert_create: "Créer une alerte pour cette recherche", alert_saved: "Alerte enregistrée ! Tu recevras un e-mail pour les nouvelles annonces correspondantes.",
+  alert_my_alerts: "Mes alertes actives", alert_delete: "Supprimer",
+  alert_summary_type: "Type", alert_summary_any: "tous",
+
   footer_tagline: "CléSchengen — les annonces sont stockées dans une base partagée. Les coordonnées des propriétaires ne sont révélées qu'après paiement, et la publication d'annonces est réservée aux comptes propriétaires vérifiés.",
 
   contact_title: "Contactez-nous",
@@ -229,6 +241,18 @@ const en = {
   favorites_login_prompt: "Log in to save listings as favourites.",
 
   filter_price_min: "Min price", filter_price_max: "Max price", search_button: "Search",
+
+  nav_guides: "Country guides", guides_title: "Practical country guides",
+  guides_subtitle: "What you need to know before renting in each Schengen country.",
+  guides_select_country: "Choose a country", guides_documents: "Documents required",
+  guides_deposit: "Security deposit", guides_notice: "Notice period", guides_tip: "Good to know",
+  guides_generic_notice: "General guide (no detailed sheet for this country yet).",
+
+  nav_map: "Map",
+
+  alert_create: "Create an alert for this search", alert_saved: "Alert saved! You'll get an e-mail for matching new listings.",
+  alert_my_alerts: "My active alerts", alert_delete: "Delete",
+  alert_summary_type: "Type", alert_summary_any: "any",
 
   footer_tagline: "CléSchengen — listings are stored in a shared database. Owners' contact details are only revealed after payment, and publishing listings is reserved for verified owner accounts.",
 
