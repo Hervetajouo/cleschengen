@@ -196,6 +196,8 @@ const fr = {
   admin_accounts_title: "Comptes créés", admin_no_accounts: "Aucun compte pour l'instant.",
   admin_col_email: "E-mail", admin_col_role: "Rôle", admin_col_status: "Statut", admin_col_created: "Créé le",
   role_chercheur: "Chercheur", role_bailleur: "Propriétaire", role_admin: "Admin",
+  admin_delete_account_confirm: "Supprimer définitivement le compte {email} ? Ses annonces, messages et favoris seront aussi supprimés. Cette action est irréversible.",
+  admin_delete_account_error: "Échec de la suppression, réessaie.",
 
   nav_dashboard: "Tableau de bord",
   dash_title: "Mes annonces", dash_subtitle: "Vues et déblocages de tes annonces publiées.",
@@ -401,6 +403,8 @@ const en = {
   admin_accounts_title: "Accounts created", admin_no_accounts: "No accounts yet.",
   admin_col_email: "E-mail", admin_col_role: "Role", admin_col_status: "Status", admin_col_created: "Created on",
   role_chercheur: "Seeker", role_bailleur: "Owner", role_admin: "Admin",
+  admin_delete_account_confirm: "Permanently delete the account {email}? Their listings, messages and favourites will also be deleted. This action cannot be undone.",
+  admin_delete_account_error: "Failed to delete, try again.",
 
   nav_dashboard: "Dashboard",
   dash_title: "My listings", dash_subtitle: "Views and unlocks for your published listings.",

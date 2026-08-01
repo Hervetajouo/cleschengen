@@ -1551,6 +1551,19 @@ function AdminPanel({ lang }) {
 
   const [accounts, setAccounts] = useState([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
+  const [deletingAccountId, setDeletingAccountId] = useState(null);
+
+  async function deleteAccount(id, email) {
+    if (!window.confirm(t(lang, "admin_delete_account_confirm").replace("{email}", email))) return;
+    setDeletingAccountId(id);
+    const { data, error } = await supabase.functions.invoke("admin-delete-account", { body: { userId: id } });
+    setDeletingAccountId(null);
+    if (error || data?.error) {
+      alert(data?.error || error?.message || t(lang, "admin_delete_account_error"));
+      return;
+    }
+    loadAccounts();
+  }
 
   const loadAccounts = useCallback(async () => {
     setAccountsLoading(true);
@@ -1795,6 +1808,7 @@ function AdminPanel({ lang }) {
                 <th className="px-4 py-2.5 text-left font-medium">{t(lang, "admin_col_role")}</th>
                 <th className="px-4 py-2.5 text-left font-medium">{t(lang, "admin_col_status")}</th>
                 <th className="px-4 py-2.5 text-right font-medium">{t(lang, "admin_col_created")}</th>
+                <th className="px-4 py-2.5 text-right font-medium">{t(lang, "dash_col_actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -1816,6 +1830,16 @@ function AdminPanel({ lang }) {
                   </td>
                   <td className="px-4 py-2.5 text-right text-xs" style={{ color: C.slate }}>
                     {new Date(a.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR")}
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    {a.role === "admin" ? (
+                      <span style={{ color: C.slate }}>—</span>
+                    ) : (
+                      <button disabled={deletingAccountId === a.id} onClick={() => deleteAccount(a.id, a.email)}
+                        className="clesch-focus flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-white disabled:opacity-60" style={{ background: C.rust }}>
+                        <Trash2 size={12} /> {t(lang, "dash_delete")}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
