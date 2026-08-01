@@ -52,6 +52,15 @@ const fr = {
   plan_monthly: "Mensuel", plan_monthly_tagline: "Le choix le plus courant pour un propriétaire actif.",
   plan_yearly: "Annuel", plan_yearly_tagline: "Le tarif le plus avantageux pour une présence continue.",
 
+  modal_payment_error: "Impossible de démarrer le paiement, réessaie.",
+  add_otp_need_phone: "Renseigne d'abord ton numéro de téléphone.",
+  add_otp_wrong: "Code incorrect. Vérifie et réessaie.",
+  add_err_owner: "Indique ton nom.", add_err_phone: "Indique un numéro joignable.",
+  add_err_city: "Indique la ville.", add_err_neighborhood: "Indique le quartier.",
+  add_err_price: "Indique un prix valide.", add_err_desc: "Ajoute une courte description.",
+  add_gate_phone_error: "Vérifie ton numéro de téléphone avant de publier.",
+  add_gate_captcha_error: "Le code anti-robot saisi est incorrect.",
+
   footer_tagline: "CléSchengen — les annonces sont stockées dans une base partagée. Les coordonnées des propriétaires ne sont révélées qu'après paiement, et la publication d'annonces est réservée aux comptes propriétaires vérifiés.",
 
   contact_title: "Contactez-nous",
@@ -191,6 +200,15 @@ const en = {
   plan_weekly: "Weekly", plan_weekly_tagline: "To test visibility on a one-off listing.",
   plan_monthly: "Monthly", plan_monthly_tagline: "The most popular choice for an active owner.",
   plan_yearly: "Yearly", plan_yearly_tagline: "The best rate for a continuous presence.",
+
+  modal_payment_error: "Unable to start the payment, try again.",
+  add_otp_need_phone: "Enter your phone number first.",
+  add_otp_wrong: "Incorrect code. Check and try again.",
+  add_err_owner: "Enter your name.", add_err_phone: "Enter a reachable phone number.",
+  add_err_city: "Enter the city.", add_err_neighborhood: "Enter the neighbourhood.",
+  add_err_price: "Enter a valid price.", add_err_desc: "Add a short description.",
+  add_gate_phone_error: "Verify your phone number before publishing.",
+  add_gate_captcha_error: "The anti-robot code you entered is incorrect.",
 
   footer_tagline: "CléSchengen — listings are stored in a shared database. Owners' contact details are only revealed after payment, and publishing listings is reserved for verified owner accounts.",
 

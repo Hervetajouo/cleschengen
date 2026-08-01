@@ -250,7 +250,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
       await onUnlock(listing.id);
       // onUnlock redirects the browser to Stripe — if we're still here, it failed.
     } catch (err) {
-      setError(err.message || "Impossible de démarrer le paiement, réessaie.");
+      setError(err.message || t(lang, "modal_payment_error"));
       setStage("detail");
     }
   }
@@ -437,7 +437,7 @@ function AddListingForm({ onSubmit, saving, lang }) {
 
   function sendOtp() {
     if (!form.phone.trim()) {
-      setOtpError("Renseigne d'abord ton numéro de téléphone.");
+      setOtpError(t(lang, "add_otp_need_phone"));
       return;
     }
     setOtpError("");
@@ -451,7 +451,7 @@ function AddListingForm({ onSubmit, saving, lang }) {
       setVerified(true);
       setOtpError("");
     } else {
-      setOtpError("Code incorrect. Vérifie et réessaie.");
+      setOtpError(t(lang, "add_otp_wrong"));
     }
   }
 
@@ -462,12 +462,12 @@ function AddListingForm({ onSubmit, saving, lang }) {
 
   function validate() {
     const e = {};
-    if (!form.owner.trim()) e.owner = "Indique ton nom.";
-    if (!form.phone.trim()) e.phone = "Indique un numéro joignable.";
-    if (!form.city.trim()) e.city = "Indique la ville.";
-    if (!form.neighborhood.trim()) e.neighborhood = "Indique le quartier.";
-    if (!form.price || Number(form.price) <= 0) e.price = "Indique un prix valide.";
-    if (!form.desc.trim()) e.desc = "Ajoute une courte description.";
+    if (!form.owner.trim()) e.owner = t(lang, "add_err_owner");
+    if (!form.phone.trim()) e.phone = t(lang, "add_err_phone");
+    if (!form.city.trim()) e.city = t(lang, "add_err_city");
+    if (!form.neighborhood.trim()) e.neighborhood = t(lang, "add_err_neighborhood");
+    if (!form.price || Number(form.price) <= 0) e.price = t(lang, "add_err_price");
+    if (!form.desc.trim()) e.desc = t(lang, "add_err_desc");
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -476,11 +476,11 @@ function AddListingForm({ onSubmit, saving, lang }) {
     setGateError("");
     if (!validate()) return;
     if (!verified) {
-      setGateError("Vérifie ton numéro de téléphone avant de publier.");
+      setGateError(t(lang, "add_gate_phone_error"));
       return;
     }
     if (captchaInput.trim().toUpperCase() !== captchaCode) {
-      setGateError("Le code anti-robot saisi est incorrect.");
+      setGateError(t(lang, "add_gate_captcha_error"));
       refreshCaptcha();
       return;
     }
@@ -2045,7 +2045,7 @@ export default function CleSchengen() {
                 {unlockedList.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 rounded-xl border p-10 text-center" style={{ borderColor: C.line, color: C.slate }}>
                     <ListChecks size={22} />
-                    Tu n'as encore débloqué aucun contact. Va dans « Rechercher » pour trouver une annonce.
+                    {t(lang, "history_empty")}
                   </div>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2">
