@@ -66,14 +66,16 @@ function priceUnit(lang, transaction, type) {
 
 function detailsSummary(lang, listing) {
   const d = listing.details || {};
+  const hasDetails = Object.keys(d).length > 0;
+  if (!hasDetails) return "";
   if (listing.type === "maison") {
     if (d.subtype === "appartement") {
       const aptLabel = t(lang, `apt_${d.aptSubtype || "bilocale"}`).split(" (")[0];
-      return `${aptLabel} · ${d.bedrooms || "?"} ${t(lang, "add_bedrooms").toLowerCase()} · ${d.bathrooms || "?"} ${t(lang, "add_bathrooms").toLowerCase()}`;
+      return `${aptLabel} · ${d.bedrooms || "1"} ${t(lang, "add_bedrooms").toLowerCase()} · ${d.bathrooms || "1"} ${t(lang, "add_bathrooms").toLowerCase()}`;
     }
-    const parts = [t(lang, "subtype_villa"), `${d.bedrooms || "?"} ${t(lang, "add_bedrooms").toLowerCase()}`];
+    const parts = [t(lang, "subtype_villa"), `${d.bedrooms || "1"} ${t(lang, "add_bedrooms").toLowerCase()}`];
     if (d.hasLivingRoom) parts.push(t(lang, "add_living_room").toLowerCase());
-    parts.push(`${d.bathrooms || "?"} ${t(lang, "add_bathrooms").toLowerCase()}`);
+    parts.push(`${d.bathrooms || "1"} ${t(lang, "add_bathrooms").toLowerCase()}`);
     return parts.join(" · ");
   }
   if (listing.type === "chambre") {
@@ -2078,6 +2080,10 @@ export default function CleSchengen() {
   }
 
   const [appliedPriceMax, setAppliedPriceMax] = useState("");
+  const [fSubtype, setFSubtype] = useState("all");
+  const [fMinBedrooms, setFMinBedrooms] = useState("");
+  const [fShowerType, setFShowerType] = useState("all");
+  const [fApplianceCategory, setFApplianceCategory] = useState("all");
 
   /* ---- Auth: track session + load matching profile row ---- */
   const loadProfile = useCallback(async (uid) => {
@@ -2269,10 +2275,15 @@ export default function CleSchengen() {
       if (fCountry !== "all" && l.country !== fCountry) return false;
       if (appliedPriceMin !== "" && Number(l.price) < Number(appliedPriceMin)) return false;
       if (appliedPriceMax !== "" && Number(l.price) > Number(appliedPriceMax)) return false;
+      const d = l.details || {};
+      if (fType === "maison" && fSubtype !== "all" && d.subtype !== fSubtype) return false;
+      if (fType === "maison" && fMinBedrooms !== "" && Number(d.bedrooms || 0) < Number(fMinBedrooms)) return false;
+      if (fType === "chambre" && fShowerType !== "all" && d.showerType !== fShowerType) return false;
+      if (fType === "appareils" && fApplianceCategory !== "all" && d.applianceCategory !== fApplianceCategory) return false;
       if (q && !(`${l.city} ${l.country} ${l.desc}`.toLowerCase().includes(q.toLowerCase()))) return false;
       return true;
     });
-  }, [listings, fType, fTrans, fCountry, q, appliedPriceMin, appliedPriceMax]);
+  }, [listings, fType, fTrans, fCountry, q, appliedPriceMin, appliedPriceMax, fSubtype, fMinBedrooms, fShowerType, fApplianceCategory]);
 
   const unlockedList = listings.filter((l) => unlocked[l.id]);
   const favoritesList = listings.filter((l) => favorites[l.id]);
@@ -2424,6 +2435,43 @@ export default function CleSchengen() {
                 <Mail size={14} /> {t(lang, "alert_create")}
               </button>
             </div>
+
+            {fType === "maison" && (
+              <div className="mb-5 -mt-2 flex flex-wrap items-center gap-2.5">
+                <Select value={fSubtype} onChange={(e) => setFSubtype(e.target.value)}>
+                  <option value="all">{t(lang, "add_house_subtype")}</option>
+                  <option value="villa">{t(lang, "subtype_villa")}</option>
+                  <option value="appartement">{t(lang, "subtype_appartement")}</option>
+                </Select>
+                <input
+                  type="number" min="0" value={fMinBedrooms} onChange={(e) => setFMinBedrooms(e.target.value)}
+                  placeholder={t(lang, "filter_min_bedrooms")}
+                  className="clesch-focus w-32 rounded-lg border py-2 px-3 text-sm outline-none"
+                  style={{ borderColor: C.line, background: C.card }}
+                />
+              </div>
+            )}
+
+            {fType === "chambre" && (
+              <div className="mb-5 -mt-2 flex flex-wrap items-center gap-2.5">
+                <Select value={fShowerType} onChange={(e) => setFShowerType(e.target.value)}>
+                  <option value="all">{t(lang, "add_shower_type")}</option>
+                  <option value="private">{t(lang, "shower_private")}</option>
+                  <option value="shared">{t(lang, "shower_shared")}</option>
+                </Select>
+              </div>
+            )}
+
+            {fType === "appareils" && (
+              <div className="mb-5 -mt-2 flex flex-wrap items-center gap-2.5">
+                <Select value={fApplianceCategory} onChange={(e) => setFApplianceCategory(e.target.value)}>
+                  <option value="all">{t(lang, "add_appliance_category")}</option>
+                  <option value="electronique">{t(lang, "appliance_electronique")}</option>
+                  <option value="electromenager">{t(lang, "appliance_electromenager")}</option>
+                  <option value="autre">{t(lang, "appliance_autre")}</option>
+                </Select>
+              </div>
+            )}
 
             {alertSaved && (
               <p className="mb-4 flex items-center gap-1.5 text-xs" style={{ color: C.green }}>

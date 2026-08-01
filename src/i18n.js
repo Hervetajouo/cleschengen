@@ -84,6 +84,7 @@ const fr = {
   favorites_login_prompt: "Connecte-toi pour sauvegarder des annonces en favoris.",
 
   filter_price_min: "Prix min", filter_price_max: "Prix max", search_button: "Rechercher",
+  filter_min_bedrooms: "Chambres min.",
 
   nav_guides: "Guides pays", guides_title: "Guides pratiques par pays",
   guides_subtitle: "Ce qu'il faut savoir avant de louer dans chaque pays de l'espace Schengen.",
@@ -271,6 +272,7 @@ const en = {
   favorites_login_prompt: "Log in to save listings as favourites.",
 
   filter_price_min: "Min price", filter_price_max: "Max price", search_button: "Search",
+  filter_min_bedrooms: "Min bedrooms",
 
   nav_guides: "Country guides", guides_title: "Practical country guides",
   guides_subtitle: "What you need to know before renting in each Schengen country.",
