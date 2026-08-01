@@ -193,6 +193,10 @@ const fr = {
   admin_delete_confirm: "Supprimer définitivement cette annonce ?",
   admin_support: "Support", admin_messages_title: "Messages reçus", admin_no_messages: "Aucun message pour l'instant.",
 
+  admin_accounts_title: "Comptes créés", admin_no_accounts: "Aucun compte pour l'instant.",
+  admin_col_email: "E-mail", admin_col_role: "Rôle", admin_col_status: "Statut", admin_col_created: "Créé le",
+  role_chercheur: "Chercheur", role_bailleur: "Propriétaire", role_admin: "Admin",
+
   nav_dashboard: "Tableau de bord",
   dash_title: "Mes annonces", dash_subtitle: "Vues et déblocages de tes annonces publiées.",
   dash_loading: "Chargement…", dash_empty: "Tu n'as encore publié aucune annonce.",
@@ -393,6 +397,10 @@ const en = {
   admin_no_listings: "No listings published yet.", admin_delete: "Delete",
   admin_delete_confirm: "Permanently delete this listing?",
   admin_support: "Support", admin_messages_title: "Messages received", admin_no_messages: "No messages yet.",
+
+  admin_accounts_title: "Accounts created", admin_no_accounts: "No accounts yet.",
+  admin_col_email: "E-mail", admin_col_role: "Role", admin_col_status: "Status", admin_col_created: "Created on",
+  role_chercheur: "Seeker", role_bailleur: "Owner", role_admin: "Admin",
 
   nav_dashboard: "Dashboard",
   dash_title: "My listings", dash_subtitle: "Views and unlocks for your published listings.",

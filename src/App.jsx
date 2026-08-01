@@ -1549,6 +1549,19 @@ function AdminPanel({ lang }) {
     setMessagesLoading(false);
   }, []);
 
+  const [accounts, setAccounts] = useState([]);
+  const [accountsLoading, setAccountsLoading] = useState(true);
+
+  const loadAccounts = useCallback(async () => {
+    setAccountsLoading(true);
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, email, role, verification_status, email_verified, created_at")
+      .order("created_at", { ascending: false });
+    setAccounts(data || []);
+    setAccountsLoading(false);
+  }, []);
+
   const [analytics, setAnalytics] = useState(null);
   const [dailyStats, setDailyStats] = useState([]);
   const [tabStats, setTabStats] = useState([]);
@@ -1589,7 +1602,7 @@ function AdminPanel({ lang }) {
     loadListingsAdmin();
   }
 
-  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); loadAnalytics(); }, [load, loadMessages, loadListingsAdmin, loadAnalytics]);
+  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); loadAnalytics(); loadAccounts(); }, [load, loadMessages, loadListingsAdmin, loadAnalytics, loadAccounts]);
 
   async function viewDocument(row) {
     if (!row.id_document_path) return;
@@ -1761,6 +1774,53 @@ function AdminPanel({ lang }) {
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      <p className="mt-10 font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "admin_moderation")}</p>
+      <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_accounts_title")}</h2>
+
+      {accountsLoading ? (
+        <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> {t(lang, "admin_loading")}</div>
+      ) : accounts.length === 0 ? (
+        <div className="mt-3 rounded-xl border p-6 text-center text-sm" style={{ borderColor: C.line, color: C.slate }}>
+          {t(lang, "admin_no_accounts")}
+        </div>
+      ) : (
+        <div className="mt-3 overflow-x-auto rounded-xl" style={{ border: `1px solid ${C.line}` }}>
+          <table className="w-full text-sm" style={{ background: C.card }}>
+            <thead>
+              <tr style={{ background: C.paper, color: C.slate }}>
+                <th className="px-4 py-2.5 text-left font-medium">{t(lang, "admin_col_email")}</th>
+                <th className="px-4 py-2.5 text-left font-medium">{t(lang, "admin_col_role")}</th>
+                <th className="px-4 py-2.5 text-left font-medium">{t(lang, "admin_col_status")}</th>
+                <th className="px-4 py-2.5 text-right font-medium">{t(lang, "admin_col_created")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {accounts.map((a) => (
+                <tr key={a.id} style={{ borderTop: `1px solid ${C.line}` }}>
+                  <td className="px-4 py-2.5" style={{ color: C.ink }}>{a.email}</td>
+                  <td className="px-4 py-2.5" style={{ color: C.ink }}>{t(lang, `role_${a.role}`)}</td>
+                  <td className="px-4 py-2.5">
+                    {a.role === "bailleur" ? (
+                      <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{
+                        background: a.verification_status === "verified" ? "#EAF3EE" : a.verification_status === "rejected" ? "#F7EAE6" : "#FBF3E7",
+                        color: a.verification_status === "verified" ? C.green : a.verification_status === "rejected" ? C.rust : C.gold,
+                      }}>
+                        {a.verification_status}
+                      </span>
+                    ) : (
+                      <span style={{ color: C.slate }}>—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2.5 text-right text-xs" style={{ color: C.slate }}>
+                    {new Date(a.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
