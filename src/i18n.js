@@ -72,6 +72,14 @@ const fr = {
   add_appliance_category: "Catégorie", appliance_electronique: "Électronique",
   appliance_electromenager: "Électroménager", appliance_autre: "Autre",
   add_locating: "Localisation de l'adresse…",
+  add_generate_desc: "Générer automatiquement", add_generate_desc_note: "Remplis les champs ci-dessus puis clique pour générer un texte de base à ajuster librement.",
+
+  nav_messages: "Messages",
+  msg_title: "Une question avant de débloquer ?", msg_subtitle: "Écris directement au propriétaire, sans payer — il verra ton message et pourra te répondre.",
+  msg_placeholder: "Écris ton message…", msg_send: "Envoyer",
+  msg_from_owner: "Le propriétaire", msg_from_you: "Toi",
+  msg_inbox_title: "Messages reçus", msg_inbox_empty: "Aucune question reçue pour l'instant.",
+  msg_from_seeker: "Le chercheur", msg_you_replied: "Toi", msg_reply_placeholder: "Écris ta réponse…",
   add_gate_phone_error: "Vérifie ton numéro de téléphone avant de publier.",
   add_gate_captcha_error: "Le code anti-robot saisi est incorrect.",
 
@@ -260,6 +268,14 @@ const en = {
   add_appliance_category: "Category", appliance_electronique: "Electronics",
   appliance_electromenager: "Home appliances", appliance_autre: "Other",
   add_locating: "Locating the address…",
+  add_generate_desc: "Generate automatically", add_generate_desc_note: "Fill in the fields above, then click to generate a base text you can freely adjust.",
+
+  nav_messages: "Messages",
+  msg_title: "A question before unlocking?", msg_subtitle: "Write directly to the owner, for free — they'll see your message and can reply.",
+  msg_placeholder: "Write your message…", msg_send: "Send",
+  msg_from_owner: "The owner", msg_from_you: "You",
+  msg_inbox_title: "Messages received", msg_inbox_empty: "No questions received yet.",
+  msg_from_seeker: "The seeker", msg_you_replied: "You", msg_reply_placeholder: "Write your reply…",
   add_gate_phone_error: "Verify your phone number before publishing.",
   add_gate_captcha_error: "The anti-robot code you entered is incorrect.",
 

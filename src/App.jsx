@@ -87,6 +87,60 @@ function detailsSummary(lang, listing) {
   return "";
 }
 
+/* Generates a ready-to-edit listing description from the structured fields
+   already filled in the form — no AI/API needed, free and instant. */
+function generateDescription(lang, form) {
+  const city = form.city || (lang === "en" ? "this city" : "cette ville");
+  const country = form.country || "";
+  const isRent = form.transaction === "location";
+
+  if (form.type === "maison") {
+    const isApt = form.subtype === "appartement";
+    const bedrooms = form.bedrooms || "1";
+    const bathrooms = form.bathrooms || "1";
+    if (lang === "en") {
+      const kind = isApt ? `a ${t("en", `apt_${form.aptSubtype || "bilocale"}`).split(" (")[0].toLowerCase()} apartment` : "a house";
+      let s = `${isRent ? "For rent" : "For sale"}: ${kind} in ${city}, ${country}, with ${bedrooms} bedroom${bedrooms > 1 ? "s" : ""}`;
+      if (!isApt && form.hasLivingRoom) s += " and a living room";
+      s += ` and ${bathrooms} bathroom${bathrooms > 1 ? "s" : ""}.`;
+      if (isRent && form.availableFrom) s += ` Available from ${new Date(form.availableFrom).toLocaleDateString("en-GB")}.`;
+      s += " Bright and well maintained, close to shops and public transport. Contact the owner to arrange a viewing.";
+      return s;
+    }
+    const kind = isApt ? `un appartement ${t("fr", `apt_${form.aptSubtype || "bilocale"}`).split(" (")[0].toLowerCase()}` : "une maison";
+    let s = `${isRent ? "À louer" : "À vendre"} : ${kind} à ${city}, ${country}, avec ${bedrooms} chambre${bedrooms > 1 ? "s" : ""}`;
+    if (!isApt && form.hasLivingRoom) s += ", un salon";
+    s += ` et ${bathrooms} salle${bathrooms > 1 ? "s" : ""} de bain.`;
+    if (isRent && form.availableFrom) s += ` Disponible à partir du ${new Date(form.availableFrom).toLocaleDateString("fr-FR")}.`;
+    s += " Lumineux et bien entretenu, proche des commerces et des transports. Contacte le propriétaire pour organiser une visite.";
+    return s;
+  }
+
+  if (form.type === "chambre") {
+    const shower = form.showerType === "shared"
+      ? (lang === "en" ? "shared bathroom" : "salle de bain partagée")
+      : (lang === "en" ? "private bathroom" : "salle de bain privée");
+    return lang === "en"
+      ? `Furnished room available in ${city}, ${country}, with ${shower}. Quiet, welcoming home, close to public transport. Ideal for a student or young professional. Contact the owner for more details.`
+      : `Chambre meublée disponible à ${city}, ${country}, avec ${shower}. Logement calme et accueillant, proche des transports. Idéal pour un·e étudiant·e ou jeune actif·ve. Contacte le propriétaire pour plus de détails.`;
+  }
+
+  if (form.type === "voiture") {
+    return lang === "en"
+      ? `${isRent ? "Car for rent" : "Car for sale"} in ${city}, ${country}. Well maintained, regularly serviced. Contact the owner for the full details and availability.`
+      : `Voiture ${isRent ? "à louer" : "à vendre"} à ${city}, ${country}. Bien entretenue, révisions à jour. Contacte le propriétaire pour tous les détails et les disponibilités.`;
+  }
+
+  if (form.type === "appareils") {
+    const cat = t(lang, `appliance_${form.applianceCategory || "autre"}`).toLowerCase();
+    return lang === "en"
+      ? `${cat.charAt(0).toUpperCase() + cat.slice(1)} item ${isRent ? "for rent" : "for sale"} in ${city}, ${country}. Good working condition. Contact the owner for more information.`
+      : `Appareil (${cat}) ${isRent ? "à louer" : "à vendre"} à ${city}, ${country}. Bon état de fonctionnement. Contacte le propriétaire pour plus d'informations.`;
+  }
+
+  return "";
+}
+
 const UNLOCK_FEE = 4.99;
 
 
@@ -272,6 +326,40 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
+  const [messages, setMessages] = useState([]);
+  const [messageText, setMessageText] = useState("");
+  const [sendingMsg, setSendingMsg] = useState(false);
+
+  const loadMessages = useCallback(async () => {
+    if (!session) { setMessages([]); return; }
+    const { data } = await supabase
+      .from("listing_messages")
+      .select("*")
+      .eq("listing_id", listing.id)
+      .eq("seeker_id", session.user.id)
+      .order("created_at", { ascending: true });
+    setMessages(data || []);
+  }, [session, listing.id]);
+
+  useEffect(() => { loadMessages(); }, [loadMessages]);
+
+  async function sendMessage() {
+    if (!session) { onClose(); onRequireAuth(); return; }
+    if (!messageText.trim()) return;
+    setSendingMsg(true);
+    const { error: err } = await supabase.from("listing_messages").insert({
+      listing_id: listing.id, seeker_id: session.user.id, from_owner: false, message: messageText.trim(),
+    });
+    if (!err) {
+      supabase.functions.invoke("notify-listing-message", {
+        body: { listingId: listing.id, seekerId: session.user.id, fromOwner: false },
+      }).then(null, () => {});
+      setMessageText("");
+      loadMessages();
+    }
+    setSendingMsg(false);
+  }
+
   useEffect(() => {
     supabase.rpc("increment_listing_view", { p_listing_id: listing.id }).then(null, () => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -402,6 +490,42 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
               {!session && (
                 <p className="mt-2 text-xs" style={{ color: C.slate }}>{t(lang, "modal_account_required")}</p>
               )}
+            </div>
+          )}
+
+          {stage === "detail" && (
+            <div className="mt-4 rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+              <p className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: C.ink }}>
+                <MessageCircle size={15} /> {t(lang, "msg_title")}
+              </p>
+              <p className="mt-1 text-xs" style={{ color: C.slate }}>{t(lang, "msg_subtitle")}</p>
+
+              {messages.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {messages.map((m) => (
+                    <div key={m.id} className="rounded-lg p-2.5 text-sm" style={{ background: m.from_owner ? "#EAF3EE" : C.paper, marginLeft: m.from_owner ? 0 : "10%", marginRight: m.from_owner ? "10%" : 0 }}>
+                      <p className="text-xs font-medium" style={{ color: m.from_owner ? C.green : C.slate }}>
+                        {m.from_owner ? t(lang, "msg_from_owner") : t(lang, "msg_from_you")}
+                      </p>
+                      <p style={{ color: C.ink }}>{m.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-3 flex gap-2">
+                <input
+                  value={messageText} onChange={(e) => setMessageText(e.target.value)}
+                  placeholder={t(lang, "msg_placeholder")}
+                  className="clesch-focus flex-1 rounded-lg border px-3 py-2 text-sm outline-none"
+                  style={{ borderColor: C.line }}
+                  onKeyDown={(e) => { if (e.key === "Enter") sendMessage(); }}
+                />
+                <button disabled={sendingMsg} onClick={sendMessage}
+                  className="clesch-focus rounded-lg px-3 py-2 text-sm font-semibold text-white disabled:opacity-60" style={{ background: C.ink }}>
+                  {sendingMsg ? <Loader2 size={15} className="animate-spin" /> : t(lang, "msg_send")}
+                </button>
+              </div>
             </div>
           )}
 
@@ -780,11 +904,18 @@ function AddListingForm({ onSubmit, saving, lang }) {
         </div>
 
         <div className="col-span-2">
-          <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_description")}</label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_description")}</label>
+            <button type="button" onClick={() => set("desc", generateDescription(lang, form))}
+              className="clesch-focus flex items-center gap-1 text-xs font-medium" style={{ color: C.gold }}>
+              <Sparkles size={12} /> {t(lang, "add_generate_desc")}
+            </button>
+          </div>
           <textarea value={form.desc} onChange={(e) => set("desc", e.target.value)} rows={3}
             className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
             style={{ borderColor: errors.desc ? C.rust : C.line }} placeholder={t(lang, "add_description_ph")} />
           {errors.desc && <p className="mt-1 text-xs" style={{ color: C.rust }}>{errors.desc}</p>}
+          <p className="mt-1 text-xs" style={{ color: C.slate }}>{t(lang, "add_generate_desc_note")}</p>
         </div>
 
         {/* Photos */}
@@ -1896,6 +2027,102 @@ function EditListingModal({ listing, onClose, onSaved, lang }) {
   );
 }
 
+/* ---------- Owner: incoming questions from seekers, before they unlock the contact ---------- */
+function OwnerMessages({ lang }) {
+  const [threads, setThreads] = useState([]); // grouped by listing_id + seeker_id
+  const [loading, setLoading] = useState(true);
+  const [replyText, setReplyText] = useState({});
+  const [sendingId, setSendingId] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from("listing_messages")
+      .select("*, listings(city, country, type, transaction)")
+      .order("created_at", { ascending: true });
+    const grouped = {};
+    (data || []).forEach((m) => {
+      const key = `${m.listing_id}::${m.seeker_id}`;
+      if (!grouped[key]) grouped[key] = { listingId: m.listing_id, seekerId: m.seeker_id, listing: m.listings, messages: [] };
+      grouped[key].messages.push(m);
+    });
+    setThreads(Object.values(grouped).reverse());
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function reply(listingId, seekerId) {
+    const key = `${listingId}::${seekerId}`;
+    const text = (replyText[key] || "").trim();
+    if (!text) return;
+    setSendingId(key);
+    const { error } = await supabase.from("listing_messages").insert({
+      listing_id: listingId, seeker_id: seekerId, from_owner: true, message: text,
+    });
+    if (!error) {
+      supabase.functions.invoke("notify-listing-message", {
+        body: { listingId, seekerId, fromOwner: true },
+      }).then(null, () => {});
+      setReplyText((r) => ({ ...r, [key]: "" }));
+      load();
+    }
+    setSendingId(null);
+  }
+
+  return (
+    <div>
+      <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "add_landlord_gate_title")}</p>
+      <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "msg_inbox_title")}</h1>
+
+      {loading ? (
+        <div className="mt-6 flex items-center gap-2 text-sm" style={{ color: C.slate }}>
+          <Loader2 size={16} className="animate-spin" /> {t(lang, "dash_loading")}
+        </div>
+      ) : threads.length === 0 ? (
+        <div className="mt-6 rounded-xl border p-8 text-center text-sm" style={{ borderColor: C.line, color: C.slate }}>
+          {t(lang, "msg_inbox_empty")}
+        </div>
+      ) : (
+        <div className="mt-6 space-y-4">
+          {threads.map((th) => {
+            const key = `${th.listingId}::${th.seekerId}`;
+            return (
+              <div key={key} className="rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+                <p className="text-xs font-semibold" style={{ color: C.slate, fontFamily: "'IBM Plex Mono', monospace" }}>
+                  {th.listing ? `${t(lang, `type_${th.listing.type}`)} · ${th.listing.city}, ${th.listing.country}` : th.listingId}
+                </p>
+                <div className="mt-2 space-y-2">
+                  {th.messages.map((m) => (
+                    <div key={m.id} className="rounded-lg p-2.5 text-sm" style={{ background: m.from_owner ? "#EAF3EE" : C.paper, marginLeft: m.from_owner ? "10%" : 0, marginRight: m.from_owner ? 0 : "10%" }}>
+                      <p className="text-xs font-medium" style={{ color: m.from_owner ? C.green : C.slate }}>
+                        {m.from_owner ? t(lang, "msg_you_replied") : t(lang, "msg_from_seeker")}
+                      </p>
+                      <p style={{ color: C.ink }}>{m.message}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <input
+                    value={replyText[key] || ""} onChange={(e) => setReplyText((r) => ({ ...r, [key]: e.target.value }))}
+                    placeholder={t(lang, "msg_reply_placeholder")}
+                    className="clesch-focus flex-1 rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }}
+                    onKeyDown={(e) => { if (e.key === "Enter") reply(th.listingId, th.seekerId); }}
+                  />
+                  <button disabled={sendingId === key} onClick={() => reply(th.listingId, th.seekerId)}
+                    className="clesch-focus rounded-lg px-3 py-2 text-sm font-semibold text-white disabled:opacity-60" style={{ background: C.ink }}>
+                    {sendingId === key ? <Loader2 size={15} className="animate-spin" /> : t(lang, "msg_send")}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function OwnerDashboard({ lang }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2339,6 +2566,13 @@ export default function CleSchengen() {
               {t(lang, "nav_dashboard")}
             </button>
           )}
+          {profile?.role === "bailleur" && (
+            <button onClick={() => setTab("messages")}
+              className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium"
+              style={{ background: tab === "messages" ? C.gold : "transparent" }}>
+              <MessageCircle size={14} /> {t(lang, "nav_messages")}
+            </button>
+          )}
           <button onClick={() => setContactOpen(true)}
             className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium">
             <MessageCircleQuestion size={14} /> {t(lang, "nav_contact_us")}
@@ -2706,6 +2940,8 @@ export default function CleSchengen() {
         )}
 
         {tab === "dashboard" && profile?.role === "bailleur" && <OwnerDashboard lang={lang} />}
+
+        {tab === "messages" && profile?.role === "bailleur" && <OwnerMessages lang={lang} />}
 
         {tab === "admin" && isAdmin && <AdminPanel lang={lang} />}
       </main>
