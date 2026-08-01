@@ -1211,7 +1211,7 @@ function CookieBanner({ lang, onOpenPrivacy }) {
   );
 }
 
-const HERO_IMAGES = ["/hero-bg.png", "/hero-bg-2.png", "/hero-bg-3.png", "/hero-bg-4.png", "/hero-bg-5.png"];
+const HERO_IMAGES = ["/hero-bg-2.png", "/hero-bg-3.png", "/hero-bg-4.png", "/hero-bg-5.png", "/hero-bg-6.png", "/hero-bg.png"];
 
 function HowItWorks({ goTo, lang }) {
   const [heroIndex, setHeroIndex] = useState(0);
