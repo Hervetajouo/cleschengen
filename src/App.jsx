@@ -1211,7 +1211,18 @@ function CookieBanner({ lang, onOpenPrivacy }) {
   );
 }
 
+const HERO_IMAGES = ["/hero-bg.png", "/hero-bg-2.png", "/hero-bg-3.png"];
+
 function HowItWorks({ goTo, lang }) {
+  const [heroIndex, setHeroIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeroIndex((i) => (i + 1) % HERO_IMAGES.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   const steps = [
     { n: "01", title: t(lang, "how_step1_title"), body: t(lang, "how_step1_body") },
     { n: "02", title: t(lang, "how_step2_title"), body: t(lang, "how_step2_body") },
@@ -1222,7 +1233,15 @@ function HowItWorks({ goTo, lang }) {
       {/* Full-bleed hero banner, breaks out of the centered <main> container */}
       <div className="relative left-1/2 right-1/2 -mx-[50vw] -mt-8 w-screen">
         <div className="relative isolate overflow-hidden" style={{ minHeight: "460px" }}>
-          <img src="/hero-bg.png" alt="" className="absolute inset-0 h-full w-full object-cover" />
+          {HERO_IMAGES.map((src, i) => (
+            <img
+              key={src}
+              src={src}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover transition-opacity ease-in-out"
+              style={{ opacity: i === heroIndex ? 1 : 0, transitionDuration: "1500ms" }}
+            />
+          ))}
           <div
             className="absolute inset-0"
             style={{ background: "linear-gradient(180deg, rgba(22,35,63,0.80) 0%, rgba(22,35,63,0.55) 45%, rgba(22,35,63,0.92) 100%)" }}
@@ -1242,6 +1261,21 @@ function HowItWorks({ goTo, lang }) {
               <button onClick={() => goTo("add")} className="clesch-focus flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white" style={{ background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.4)" }}>
                 {t(lang, "how_cta_post")} <Plus size={15} />
               </button>
+            </div>
+            <div className="mt-8 flex items-center gap-2">
+              {HERO_IMAGES.map((src, i) => (
+                <button
+                  key={src}
+                  onClick={() => setHeroIndex(i)}
+                  aria-label={`Slide ${i + 1}`}
+                  className="clesch-focus rounded-full transition-all"
+                  style={{
+                    width: i === heroIndex ? "20px" : "8px",
+                    height: "8px",
+                    background: i === heroIndex ? C.gold : "rgba(255,255,255,0.4)",
+                  }}
+                />
+              ))}
             </div>
           </div>
         </div>
