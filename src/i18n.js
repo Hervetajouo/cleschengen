@@ -33,7 +33,7 @@ const fr = {
   modal_no_photo: "Aucune photo fournie pour cette annonce",
   modal_account_required: "Un compte est nécessaire pour payer et retrouver ce contact ensuite.",
   modal_history_hint: "Retrouve ce contact dans l'onglet « Mes contacts », même après avoir fermé l'application.",
-  modal_verified_badge: "Propriétaire vérifié",
+  modal_verified_badge: "Propriétaire vérifié", modal_link_copied: "Lien de l'annonce copié !",
 
   history_title: "Mes contacts débloqués",
   history_subtitle: "Ces contacts restent enregistrés sur ton compte, même si tu reviens plus tard.",
@@ -229,7 +229,7 @@ const en = {
   modal_no_photo: "No photo provided for this listing",
   modal_account_required: "An account is required to pay and find this contact again later.",
   modal_history_hint: "Find this contact again in the \u201cMy contacts\u201d tab, even after closing the app.",
-  modal_verified_badge: "Verified owner",
+  modal_verified_badge: "Verified owner", modal_link_copied: "Listing link copied!",
 
   history_title: "My unlocked contacts",
   history_subtitle: "These contacts stay saved to your account, even if you come back later.",

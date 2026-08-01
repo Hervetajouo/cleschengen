@@ -5,7 +5,7 @@ import {
   ShieldCheck, ChevronDown, KeyRound, ListChecks, Loader2, Info, Building2,
   ImagePlus, Trash2, BadgeCheck, Smartphone, Sparkles, ImageOff, ExternalLink,
   LogOut, UploadCloud, UserCog, ShieldQuestion, Mail, KeySquare, Package, MessageCircleQuestion,
-  Heart, MessageCircle,
+  Heart, MessageCircle, Share2,
 } from "lucide-react";
 import { supabase } from "./supabaseClient.js";
 import { LANGS, t } from "./i18n.js";
@@ -324,6 +324,7 @@ function ListingCard({ listing, unlocked, onOpen, lang, favorited, onToggleFavor
 function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequireAuth, lang, allListings, favorited, onToggleFavorite }) {
   const [stage, setStage] = useState(unlocked ? "revealed" : "detail");
   const [copied, setCopied] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const [error, setError] = useState("");
 
   const [messages, setMessages] = useState([]);
@@ -402,6 +403,17 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
     setTimeout(() => setCopied(false), 1500);
   }
 
+  function shareListing() {
+    const url = `${window.location.origin}/annonce/${listing.id}`;
+    if (navigator.share) {
+      navigator.share({ title: "CléSchengen", url }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(url).catch(() => {});
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 1500);
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.4)" }} onClick={onClose}>
       <div className="w-full max-w-md overflow-y-auto rounded-2xl shadow-xl" style={{ background: C.card, maxHeight: "90vh" }} onClick={(e) => e.stopPropagation()}>
@@ -411,12 +423,18 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
             <span className="text-sm font-semibold">{t(lang, `type_${listing.type}`)} · {t(lang, `trans_${listing.transaction}`)}</span>
           </div>
           <div className="flex items-center gap-3">
+            <button onClick={shareListing} className="clesch-focus" style={{ color: "rgba(255,255,255,0.8)" }}>
+              <Share2 size={18} />
+            </button>
             <button onClick={() => onToggleFavorite(listing.id)} className="clesch-focus" aria-pressed={favorited}>
               <Heart size={18} style={{ color: favorited ? "#E58B7B" : "rgba(255,255,255,0.8)" }} fill={favorited ? "#E58B7B" : "none"} />
             </button>
             <button onClick={onClose} className="clesch-focus hover:text-white" style={{ color: "rgba(255,255,255,0.8)" }}><X size={18} /></button>
           </div>
         </div>
+        {shareCopied && (
+          <p className="px-4 pt-2 text-xs" style={{ color: C.green, background: C.ink }}>{t(lang, "modal_link_copied")}</p>
+        )}
 
         <div className="p-5">
           {listing.photos && listing.photos.length > 0 ? (
@@ -2267,6 +2285,16 @@ export default function CleSchengen() {
 
   const [unlocked, setUnlocked] = useState({}); // listing id -> true
   const [active, setActive] = useState(null);
+
+  function openListing(l) {
+    setActive(l);
+    window.history.pushState(null, "", `/annonce/${l.id}`);
+  }
+
+  function closeListing() {
+    setActive(null);
+    window.history.pushState(null, "", "/");
+  }
   const [saving, setSaving] = useState(false);
 
   const [q, setQ] = useState("");
@@ -2414,6 +2442,18 @@ export default function CleSchengen() {
   }, []);
 
   useEffect(() => { loadListings(); }, [loadListings]);
+
+  /* ---- Deep link support: /annonce/:id opens that listing directly ---- */
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/annonce\/(.+)$/);
+    if (!match || listings.length === 0 || active) return;
+    const found = listings.find((l) => l.id === match[1]);
+    if (found) {
+      setActive(found);
+      setTab("browse");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listings]);
   useEffect(() => { loadUnlocks(session?.user?.id); }, [session, loadUnlocks]);
   useEffect(() => { loadFavorites(session?.user?.id); }, [session, loadFavorites]);
   useEffect(() => { loadSavedSearches(session?.user?.id); }, [session, loadSavedSearches]);
@@ -2756,7 +2796,7 @@ export default function CleSchengen() {
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {filtered.map((l) => (
-                      <ListingCard key={l.id} listing={l} unlocked={l.contactVisible} onOpen={setActive} lang={lang} favorited={!!favorites[l.id]} onToggleFavorite={toggleFavorite} />
+                      <ListingCard key={l.id} listing={l} unlocked={l.contactVisible} onOpen={openListing} lang={lang} favorited={!!favorites[l.id]} onToggleFavorite={toggleFavorite} />
                     ))}
                   </div>
                 )}
@@ -2810,7 +2850,7 @@ export default function CleSchengen() {
             <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "browse_title")}</p>
             <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "nav_map")}</h1>
             <div className="mt-5">
-              <ListingsMap listings={listings} lang={lang} onOpen={setActive} />
+              <ListingsMap listings={listings} lang={lang} onOpen={openListing} />
             </div>
           </div>
         )}
@@ -2890,7 +2930,7 @@ export default function CleSchengen() {
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {favoritesList.map((l) => (
-                      <ListingCard key={l.id} listing={l} unlocked={l.contactVisible} onOpen={setActive} lang={lang} favorited={!!favorites[l.id]} onToggleFavorite={toggleFavorite} />
+                      <ListingCard key={l.id} listing={l} unlocked={l.contactVisible} onOpen={openListing} lang={lang} favorited={!!favorites[l.id]} onToggleFavorite={toggleFavorite} />
                     ))}
                   </div>
                 )}
@@ -2955,7 +2995,7 @@ export default function CleSchengen() {
           listing={active}
           unlocked={active.contactVisible}
           session={session}
-          onClose={() => setActive(null)}
+          onClose={closeListing}
           onUnlock={handleUnlock}
           onRequireAuth={() => setAuthModal("login")}
           lang={lang}
