@@ -61,6 +61,14 @@ const fr = {
   add_gate_phone_error: "Vérifie ton numéro de téléphone avant de publier.",
   add_gate_captcha_error: "Le code anti-robot saisi est incorrect.",
 
+  whatsapp_button: "Contacter sur WhatsApp",
+  price_below: "Prix avantageux par rapport au marché", price_average: "Prix dans la moyenne du marché",
+  price_above: "Prix au-dessus de la moyenne du marché",
+  nav_favorites: "Favoris", favorites_title: "Mes favoris",
+  favorites_subtitle: "Les annonces que tu as sauvegardées, à retrouver facilement.",
+  favorites_empty: "Tu n'as encore sauvegardé aucune annonce. Clique sur le cœur d'une annonce pour l'ajouter ici.",
+  favorites_login_prompt: "Connecte-toi pour sauvegarder des annonces en favoris.",
+
   footer_tagline: "CléSchengen — les annonces sont stockées dans une base partagée. Les coordonnées des propriétaires ne sont révélées qu'après paiement, et la publication d'annonces est réservée aux comptes propriétaires vérifiés.",
 
   contact_title: "Contactez-nous",
@@ -209,6 +217,14 @@ const en = {
   add_err_price: "Enter a valid price.", add_err_desc: "Add a short description.",
   add_gate_phone_error: "Verify your phone number before publishing.",
   add_gate_captcha_error: "The anti-robot code you entered is incorrect.",
+
+  whatsapp_button: "Contact via WhatsApp",
+  price_below: "Good price compared to the market", price_average: "Price in line with the market average",
+  price_above: "Price above the market average",
+  nav_favorites: "Favourites", favorites_title: "My favourites",
+  favorites_subtitle: "The listings you've saved, easy to find again.",
+  favorites_empty: "You haven't saved any listing yet. Click the heart on a listing to add it here.",
+  favorites_login_prompt: "Log in to save listings as favourites.",
 
   footer_tagline: "CléSchengen — listings are stored in a shared database. Owners' contact details are only revealed after payment, and publishing listings is reserved for verified owner accounts.",
 

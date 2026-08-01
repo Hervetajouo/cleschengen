@@ -5,6 +5,7 @@ import {
   ShieldCheck, ChevronDown, KeyRound, ListChecks, Loader2, Info, Building2,
   ImagePlus, Trash2, BadgeCheck, Smartphone, Sparkles, ImageOff, ExternalLink,
   LogOut, UploadCloud, UserCog, ShieldQuestion, Mail, KeySquare, Package, MessageCircleQuestion,
+  Heart, MessageCircle,
 } from "lucide-react";
 import { supabase } from "./supabaseClient.js";
 import { LANGS, t } from "./i18n.js";
@@ -140,6 +141,11 @@ function formatPrice(p) {
   return Number(p).toLocaleString("fr-FR");
 }
 
+function waLink(phone) {
+  const digits = (phone || "").replace(/[^\d]/g, "");
+  return `https://wa.me/${digits}`;
+}
+
 function Select({ value, onChange, children }) {
   return (
     <div className="relative">
@@ -156,12 +162,20 @@ function Select({ value, onChange, children }) {
 }
 
 /* ---------- Ticket-style listing card ---------- */
-function ListingCard({ listing, unlocked, onOpen, lang }) {
+function ListingCard({ listing, unlocked, onOpen, lang, favorited, onToggleFavorite }) {
   const TypeIcon = TYPES[listing.type].icon;
   const unit = priceUnit(lang, listing.transaction, listing.type);
   const cover = listing.photos && listing.photos[0];
   return (
     <div className="relative flex overflow-hidden rounded-xl shadow-sm transition hover:shadow-md" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+      <button
+        onClick={(e) => { e.stopPropagation(); onToggleFavorite(listing.id); }}
+        className="clesch-focus absolute right-2 top-2 z-10 rounded-full p-1.5"
+        style={{ background: "rgba(255,255,255,0.9)" }}
+        aria-pressed={favorited}
+      >
+        <Heart size={16} style={{ color: favorited ? C.rust : C.slate }} fill={favorited ? C.rust : "none"} />
+      </button>
       <div className="flex-1 p-4">
         <div className="flex gap-3">
           {cover ? (
@@ -225,7 +239,7 @@ function ListingCard({ listing, unlocked, onOpen, lang }) {
 }
 
 /* ---------- Detail + payment modal ---------- */
-function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequireAuth, lang }) {
+function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequireAuth, lang, allListings, favorited, onToggleFavorite }) {
   const [stage, setStage] = useState(unlocked ? "revealed" : "detail");
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
@@ -237,6 +251,17 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
 
   const TypeIcon = TYPES[listing.type].icon;
   const unit = priceUnit(lang, listing.transaction, listing.type);
+
+  const similar = (allListings || []).filter((l) =>
+    l.id !== listing.id && l.type === listing.type && l.transaction === listing.transaction && l.country === listing.country
+  );
+  let priceHint = null;
+  if (similar.length >= 3) {
+    const avg = similar.reduce((s, l) => s + Number(l.price), 0) / similar.length;
+    if (listing.price <= avg * 0.9) priceHint = { key: "price_below", color: C.green };
+    else if (listing.price >= avg * 1.1) priceHint = { key: "price_above", color: C.rust };
+    else priceHint = { key: "price_average", color: C.slate };
+  }
 
   async function startCheckout() {
     if (!session) {
@@ -269,7 +294,12 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
             <TypeIcon size={18} />
             <span className="text-sm font-semibold">{t(lang, `type_${listing.type}`)} · {t(lang, `trans_${listing.transaction}`)}</span>
           </div>
-          <button onClick={onClose} className="clesch-focus hover:text-white" style={{ color: "rgba(255,255,255,0.8)" }}><X size={18} /></button>
+          <div className="flex items-center gap-3">
+            <button onClick={() => onToggleFavorite(listing.id)} className="clesch-focus" aria-pressed={favorited}>
+              <Heart size={18} style={{ color: favorited ? "#E58B7B" : "rgba(255,255,255,0.8)" }} fill={favorited ? "#E58B7B" : "none"} />
+            </button>
+            <button onClick={onClose} className="clesch-focus hover:text-white" style={{ color: "rgba(255,255,255,0.8)" }}><X size={18} /></button>
+          </div>
         </div>
 
         <div className="p-5">
@@ -312,6 +342,9 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
             </span>
             {unit && <span className="text-sm" style={{ color: C.slate }}>{unit}</span>}
           </div>
+          {priceHint && (
+            <p className="mt-1 text-xs font-medium" style={{ color: priceHint.color }}>{t(lang, priceHint.key)}</p>
+          )}
 
           <div className="my-5 border-t" style={{ borderColor: C.line }} />
 
@@ -362,6 +395,9 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
               {copied && <p className="mt-1 text-xs" style={{ color: C.green }}>{t(lang, "modal_copied")}</p>}
               <a href={`tel:${listing.phone.replace(/\s/g, "")}`} className="clesch-focus mt-3 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white" style={{ background: C.green }}>
                 <Phone size={15} /> {t(lang, "modal_call")} {listing.owner.split(" ")[0]}
+              </a>
+              <a href={waLink(listing.phone)} target="_blank" rel="noopener noreferrer" className="clesch-focus mt-2 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white" style={{ background: "#25D366" }}>
+                <MessageCircle size={15} /> {t(lang, "whatsapp_button")}
               </a>
               <p className="mt-3 flex items-center gap-1.5 text-xs" style={{ color: C.slate }}>
                 <Info size={12} /> {t(lang, "modal_history_hint")}
@@ -1693,6 +1729,27 @@ export default function CleSchengen() {
     setUnlocked(map);
   }, []);
 
+  /* ---- Favorites (saved listings) ---- */
+  const [favorites, setFavorites] = useState({}); // listing id -> true
+  const loadFavorites = useCallback(async (uid) => {
+    if (!uid) { setFavorites({}); return; }
+    const { data } = await supabase.from("favorites").select("listing_id").eq("user_id", uid);
+    const map = {};
+    (data || []).forEach((r) => (map[r.listing_id] = true));
+    setFavorites(map);
+  }, []);
+
+  async function toggleFavorite(listingId) {
+    if (!session) { setAuthModal("login"); return; }
+    if (favorites[listingId]) {
+      setFavorites((f) => { const next = { ...f }; delete next[listingId]; return next; });
+      await supabase.from("favorites").delete().eq("user_id", session.user.id).eq("listing_id", listingId);
+    } else {
+      setFavorites((f) => ({ ...f, [listingId]: true }));
+      await supabase.from("favorites").insert({ user_id: session.user.id, listing_id: listingId });
+    }
+  }
+
   /* ---- Active Premium subscription (grants free unlocks + skips landlord verification) ---- */
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const loadSubscription = useCallback(async (uid) => {
@@ -1707,6 +1764,7 @@ export default function CleSchengen() {
 
   useEffect(() => { loadListings(); }, [loadListings]);
   useEffect(() => { loadUnlocks(session?.user?.id); }, [session, loadUnlocks]);
+  useEffect(() => { loadFavorites(session?.user?.id); }, [session, loadFavorites]);
   useEffect(() => { loadSubscription(session?.user?.id); }, [session, loadSubscription]);
 
   /* ---- Handle the redirect back from Stripe Checkout ---- */
@@ -1791,6 +1849,7 @@ export default function CleSchengen() {
   }, [listings, fType, fTrans, fCountry, q]);
 
   const unlockedList = listings.filter((l) => unlocked[l.id]);
+  const favoritesList = listings.filter((l) => favorites[l.id]);
   const isAdmin = profile?.role === "admin";
   const isVerifiedLandlord = (profile?.role === "bailleur" && profile?.verification_status === "verified") || hasActiveSubscription;
 
@@ -1818,6 +1877,14 @@ export default function CleSchengen() {
               {label}
             </button>
           ))}
+          <button onClick={() => setTab("favorites")}
+            className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium"
+            style={{ background: tab === "favorites" ? C.gold : "transparent" }}>
+            <Heart size={14} /> {t(lang, "nav_favorites")}
+            {favoritesList.length > 0 && (
+              <span className="ml-0.5 rounded-full px-1.5 text-xs" style={{ background: "rgba(255,255,255,0.2)" }}>{favoritesList.length}</span>
+            )}
+          </button>
           <button onClick={() => setTab("history")}
             className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium"
             style={{ background: tab === "history" ? C.gold : "transparent" }}>
@@ -1926,7 +1993,7 @@ export default function CleSchengen() {
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {filtered.map((l) => (
-                      <ListingCard key={l.id} listing={l} unlocked={l.contactVisible} onOpen={setActive} lang={lang} />
+                      <ListingCard key={l.id} listing={l} unlocked={l.contactVisible} onOpen={setActive} lang={lang} favorited={!!favorites[l.id]} onToggleFavorite={toggleFavorite} />
                     ))}
                   </div>
                 )}
@@ -2026,6 +2093,37 @@ export default function CleSchengen() {
           </div>
         )}
 
+        {tab === "favorites" && (
+          <div>
+            <h2 className="mb-1 text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "favorites_title")}</h2>
+            {!session ? (
+              <div className="flex flex-col items-center gap-2 rounded-xl border p-10 text-center" style={{ borderColor: C.line, color: C.slate }}>
+                <Heart size={20} />
+                {t(lang, "favorites_login_prompt")}
+                <button onClick={() => setAuthModal("login")} className="clesch-focus mt-2 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: C.gold }}>
+                  {t(lang, "login")}
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="mb-4 text-sm" style={{ color: C.slate }}>{t(lang, "favorites_subtitle")}</p>
+                {favoritesList.length === 0 ? (
+                  <div className="flex flex-col items-center gap-2 rounded-xl border p-10 text-center" style={{ borderColor: C.line, color: C.slate }}>
+                    <Heart size={22} />
+                    {t(lang, "favorites_empty")}
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {favoritesList.map((l) => (
+                      <ListingCard key={l.id} listing={l} unlocked={l.contactVisible} onOpen={setActive} lang={lang} favorited={!!favorites[l.id]} onToggleFavorite={toggleFavorite} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
         {tab === "history" && (
           <div>
             <h2 className="mb-1 text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "history_title")}</h2>
@@ -2084,6 +2182,9 @@ export default function CleSchengen() {
           onUnlock={handleUnlock}
           onRequireAuth={() => setAuthModal("login")}
           lang={lang}
+          allListings={listings}
+          favorited={!!favorites[active.id]}
+          onToggleFavorite={toggleFavorite}
         />
       )}
 
