@@ -247,8 +247,14 @@ function ListingCard({ listing, unlocked, onOpen, lang, currency, favorited, onT
   const TypeIcon = TYPES[listing.type].icon;
   const unit = priceUnit(lang, listing.transaction, listing.type);
   const cover = listing.photos && listing.photos[0];
+  const isBoosted = listing.boostedUntil && new Date(listing.boostedUntil) > new Date();
   return (
-    <div className="relative flex overflow-hidden rounded-xl shadow-sm transition hover:shadow-md" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+    <div className="relative flex overflow-hidden rounded-xl shadow-sm transition hover:shadow-md" style={{ background: C.card, border: isBoosted ? `1px solid ${C.gold}` : `1px solid ${C.line}` }}>
+      {isBoosted && (
+        <span className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold text-white" style={{ background: C.gold }}>
+          <Star size={10} fill="white" /> {t(lang, "dash_boosted")}
+        </span>
+      )}
       <button
         onClick={(e) => { e.stopPropagation(); onToggleFavorite(listing.id); }}
         className="clesch-focus absolute right-2 top-2 z-10 rounded-full p-1.5"
@@ -2561,6 +2567,15 @@ function OwnerDashboard({ lang }) {
     load();
   }
 
+  const [boostingId, setBoostingId] = useState(null);
+  async function boostListing(id) {
+    setBoostingId(id);
+    const { data, error } = await supabase.functions.invoke("create-boost-session", { body: { listingId: id } });
+    setBoostingId(null);
+    if (error || !data?.url) { alert(data?.error || t(lang, "dash_boost_error")); return; }
+    window.location.href = data.url;
+  }
+
   return (
     <div>
       <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "add_landlord_gate_title")}</p>
@@ -2604,9 +2619,18 @@ function OwnerDashboard({ lang }) {
                     <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: r.status === "active" ? "#EAF3EE" : "#F7EAE6", color: r.status === "active" ? C.green : C.rust }}>
                       {r.status === "active" ? t(lang, "dash_active") : t(lang, "dash_unavailable")}
                     </span>
+                    {r.boosted_until && new Date(r.boosted_until) > new Date() && (
+                      <span className="ml-1 rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: "#FBF3E7", color: C.gold }}>
+                        <Star size={10} className="inline" fill={C.gold} /> {t(lang, "dash_boosted")}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex flex-wrap items-center justify-end gap-2">
+                      <button disabled={boostingId === r.id} onClick={() => boostListing(r.id)}
+                        className="clesch-focus flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium disabled:opacity-60" style={{ borderColor: C.gold, color: C.gold }}>
+                        <Star size={12} /> {boostingId === r.id ? "…" : t(lang, "dash_boost")}
+                      </button>
                       <button disabled={togglingId === r.id} onClick={() => toggleStatus(r.id, r.status)}
                         className="clesch-focus rounded-lg border px-2.5 py-1 text-xs font-medium disabled:opacity-60" style={{ borderColor: C.line, color: C.ink }}>
                         {r.status === "active" ? t(lang, "dash_mark_unavailable") : t(lang, "dash_mark_available")}
@@ -2736,13 +2760,22 @@ export default function CleSchengen() {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       loadProfile(data.session?.user?.id).finally(() => setAuthLoading(false));
+      if (data.session) registerPendingReferral();
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       loadProfile(newSession?.user?.id);
+      if (newSession) registerPendingReferral();
     });
     return () => sub.subscription.unsubscribe();
   }, [loadProfile]);
+
+  async function registerPendingReferral() {
+    const ref = localStorage.getItem("clesch-pending-ref");
+    if (!ref) return;
+    localStorage.removeItem("clesch-pending-ref");
+    await supabase.rpc("register_referral", { p_referrer_id: ref }).then(null, () => {});
+  }
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -2780,6 +2813,7 @@ export default function CleSchengen() {
           contactVisible: l.phone !== null,
           ownerRating: l.owner_rating,
           ownerReviewCount: l.owner_review_count || 0,
+          boostedUntil: l.boosted_until,
         }))
       );
     }
@@ -2828,7 +2862,23 @@ export default function CleSchengen() {
     setHasActiveSubscription(!!data && data.status === "active" && new Date(data.current_period_end) > new Date());
   }, []);
 
+  const [referralCount, setReferralCount] = useState(0);
+  const [wasReferred, setWasReferred] = useState(false);
+  const loadReferralInfo = useCallback(async (uid) => {
+    if (!uid) { setReferralCount(0); setWasReferred(false); return; }
+    const { data: count } = await supabase.rpc("my_referral_count");
+    setReferralCount(count || 0);
+    const { data: referredRow } = await supabase.from("referrals").select("id").eq("referred_id", uid).maybeSingle();
+    setWasReferred(!!referredRow);
+  }, []);
+
   useEffect(() => { loadListings(); }, [loadListings]);
+
+  /* ---- Referral link capture: ?ref=<user_id> is stored for later ---- */
+  useEffect(() => {
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref) localStorage.setItem("clesch-pending-ref", ref);
+  }, []);
 
   /* ---- Deep link support: /annonce/:id opens that listing directly ---- */
   useEffect(() => {
@@ -2845,6 +2895,7 @@ export default function CleSchengen() {
   useEffect(() => { loadFavorites(session?.user?.id); }, [session, loadFavorites]);
   useEffect(() => { loadSavedSearches(session?.user?.id); }, [session, loadSavedSearches]);
   useEffect(() => { loadSubscription(session?.user?.id); }, [session, loadSubscription]);
+  useEffect(() => { loadReferralInfo(session?.user?.id); }, [session, loadReferralInfo]);
 
   /* ---- Handle the redirect back from Stripe Checkout ---- */
   useEffect(() => {
@@ -3273,6 +3324,11 @@ export default function CleSchengen() {
                 <CheckCircle2 size={15} /> {t(lang, "premium_active_note")}
               </p>
             )}
+            {wasReferred && !hasActiveSubscription && (
+              <p className="mt-3 flex items-center gap-1.5 rounded-lg p-3 text-sm" style={{ background: "#FBF3E7", color: C.gold }}>
+                <Sparkles size={15} /> {t(lang, "referral_discount_note")}
+              </p>
+            )}
 
             {!session ? (
               <div className="mt-4 rounded-xl p-6 text-center" style={{ background: C.card, border: `1px solid ${C.line}` }}>
@@ -3305,6 +3361,23 @@ export default function CleSchengen() {
                 </div>
               ))}
             </div>
+            )}
+
+            {session && (
+              <div className="mt-8 rounded-xl p-5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+                <p className="text-sm font-semibold" style={{ color: C.ink }}>{t(lang, "referral_title")}</p>
+                <p className="mt-1 text-sm" style={{ color: C.slate }}>{t(lang, "referral_subtitle")}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <input readOnly value={`${window.location.origin}/?ref=${session.user.id}`}
+                    className="clesch-focus flex-1 rounded-lg border px-3 py-2 text-xs outline-none" style={{ borderColor: C.line, background: C.paper, minWidth: "220px" }} />
+                  <button
+                    onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/?ref=${session.user.id}`).then(null, () => {}); }}
+                    className="clesch-focus rounded-lg px-3 py-2 text-xs font-semibold text-white" style={{ background: C.ink }}>
+                    {t(lang, "referral_copy")}
+                  </button>
+                </div>
+                <p className="mt-2 text-xs" style={{ color: C.slate }}>{t(lang, "referral_count").replace("{n}", referralCount)}</p>
+              </div>
             )}
           </div>
         )}

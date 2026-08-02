@@ -225,6 +225,11 @@ const fr = {
   dash_col_actions: "Actions", dash_edit: "Modifier", dash_delete: "Supprimer",
   dash_status: "Statut", dash_active: "En ligne", dash_unavailable: "Indisponible",
   dash_mark_unavailable: "Marquer indisponible", dash_mark_available: "Remettre en ligne",
+  dash_boost: "Mettre en avant", dash_boosted: "En avant", dash_boost_error: "Impossible de démarrer le paiement, réessaie.",
+
+  referral_title: "Parraine un propriétaire ou un chercheur", referral_subtitle: "Partage ton lien : la personne qui l'utilise pour s'inscrire bénéficie de 20% de réduction sur son premier abonnement Premium.",
+  referral_copy: "Copier le lien", referral_count: "{n} personne(s) inscrite(s) via ton lien.",
+  referral_discount_note: "Tu as été parrainé·e ! Utilise le code REFERRAL20 au moment du paiement pour 20% de réduction sur ton premier abonnement.",
   dash_delete_confirm: "Supprimer définitivement cette annonce ?",
   edit_title: "Modifier l'annonce", edit_save: "Enregistrer les modifications", edit_saving: "Enregistrement…",
   edit_saved: "Modifications enregistrées.", edit_error: "Échec de l'enregistrement, réessaie.", edit_cancel: "Annuler",
@@ -451,6 +456,11 @@ const en = {
   dash_col_actions: "Actions", dash_edit: "Edit", dash_delete: "Delete",
   dash_status: "Status", dash_active: "Live", dash_unavailable: "Unavailable",
   dash_mark_unavailable: "Mark unavailable", dash_mark_available: "Make live again",
+  dash_boost: "Boost", dash_boosted: "Boosted", dash_boost_error: "Unable to start the payment, try again.",
+
+  referral_title: "Refer an owner or seeker", referral_subtitle: "Share your link: whoever signs up with it gets 20% off their first Premium subscription.",
+  referral_copy: "Copy link", referral_count: "{n} people signed up via your link.",
+  referral_discount_note: "You were referred! Use code REFERRAL20 at checkout for 20% off your first subscription.",
   dash_delete_confirm: "Permanently delete this listing?",
   edit_title: "Edit listing", edit_save: "Save changes", edit_saving: "Saving…",
   edit_saved: "Changes saved.", edit_error: "Failed to save, try again.", edit_cancel: "Cancel",
