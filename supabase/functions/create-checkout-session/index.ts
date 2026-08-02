@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      payment_method_types: ["card"],
+      payment_method_types: ["card", "paypal", "bancontact", "ideal", "klarna", "amazon_pay", "link", "mb_way", "mobilepay", "revolut_pay", "satispay", "multibanco", "blik", "twint", "eps"],
       client_reference_id: `${user.id}:${listing.id}`,
       line_items: [
         {
