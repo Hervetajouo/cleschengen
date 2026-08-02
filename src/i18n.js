@@ -86,6 +86,22 @@ const fr = {
   msg_inbox_title: "Messages reçus", msg_inbox_empty: "Aucune question reçue pour l'instant.",
   msg_from_seeker: "Le chercheur", msg_you_replied: "Toi", msg_reply_placeholder: "Écris ta réponse…",
   msg_rate_limited: "Trop de messages envoyés récemment. Réessaie dans quelques minutes.",
+
+  review_title: "Laisser un avis sur ce propriétaire", review_comment_ph: "Ton expérience avec ce propriétaire (facultatif)…",
+  review_submit: "Envoyer l'avis", review_saved: "Merci pour ton avis !",
+  review_already_left: "Tu as déjà laissé un avis pour cette annonce.", review_error: "Échec de l'envoi, réessaie.",
+
+  report_button: "Signaler cette annonce", report_title: "Signaler cette annonce",
+  report_reason: "Motif", report_reason_fraudulent: "Annonce frauduleuse", report_reason_fake_photos: "Photos volées/fausses",
+  report_reason_inappropriate: "Contenu inapproprié", report_reason_other: "Autre",
+  report_details_ph: "Précise ce qui ne va pas (facultatif)…", report_submit: "Envoyer le signalement",
+  report_saved: "Merci, ton signalement a été transmis à l'équipe.", report_error: "Échec de l'envoi, réessaie.",
+
+  currency_label: "Devise", currency_estimate: "estimation, taux approximatif",
+
+  admin_revenue_title: "Estimation des revenus", admin_revenue_note: "Estimation basée sur le tarif fixe actuel — le tableau de bord Stripe reste la source exacte (remboursements, échecs de paiement, etc. n'apparaissent pas ici).",
+  admin_revenue_unlocks: "Déblocages de contact (total)", admin_revenue_subs: "Abonnements actifs",
+  admin_revenue_subs_note: "Voir Stripe pour le détail des montants par formule.",
   add_gate_phone_error: "Vérifie ton numéro de téléphone avant de publier.",
   add_gate_captcha_error: "Le code anti-robot saisi est incorrect.",
 
@@ -195,6 +211,8 @@ const fr = {
   admin_support: "Support", admin_messages_title: "Messages reçus", admin_no_messages: "Aucun message pour l'instant.",
 
   admin_accounts_title: "Comptes créés", admin_no_accounts: "Aucun compte pour l'instant.",
+  admin_reports_title: "Signalements", admin_no_reports: "Aucun signalement pour l'instant.",
+  admin_report_resolve: "Résolu", admin_report_dismiss: "Ignorer",
   admin_col_email: "E-mail", admin_col_role: "Rôle", admin_col_status: "Statut", admin_col_created: "Créé le",
   role_chercheur: "Chercheur", role_bailleur: "Propriétaire", role_admin: "Admin",
   admin_delete_account_confirm: "Supprimer définitivement le compte {email} ? Ses annonces, messages et favoris seront aussi supprimés. Cette action est irréversible.",
@@ -294,6 +312,22 @@ const en = {
   msg_inbox_title: "Messages received", msg_inbox_empty: "No questions received yet.",
   msg_from_seeker: "The seeker", msg_you_replied: "You", msg_reply_placeholder: "Write your reply…",
   msg_rate_limited: "Too many messages sent recently. Try again in a few minutes.",
+
+  review_title: "Leave a review for this owner", review_comment_ph: "Your experience with this owner (optional)…",
+  review_submit: "Submit review", review_saved: "Thanks for your review!",
+  review_already_left: "You've already left a review for this listing.", review_error: "Failed to send, try again.",
+
+  report_button: "Report this listing", report_title: "Report this listing",
+  report_reason: "Reason", report_reason_fraudulent: "Fraudulent listing", report_reason_fake_photos: "Stolen/fake photos",
+  report_reason_inappropriate: "Inappropriate content", report_reason_other: "Other",
+  report_details_ph: "Describe what's wrong (optional)…", report_submit: "Submit report",
+  report_saved: "Thanks, your report has been sent to the team.", report_error: "Failed to send, try again.",
+
+  currency_label: "Currency", currency_estimate: "estimate, approximate rate",
+
+  admin_revenue_title: "Revenue estimate", admin_revenue_note: "Estimate based on the current fixed rate — the Stripe dashboard remains the exact source (refunds, failed payments, etc. are not reflected here).",
+  admin_revenue_unlocks: "Contact unlocks (total)", admin_revenue_subs: "Active subscriptions",
+  admin_revenue_subs_note: "See Stripe for the breakdown by plan.",
   add_gate_phone_error: "Verify your phone number before publishing.",
   add_gate_captcha_error: "The anti-robot code you entered is incorrect.",
 
@@ -403,6 +437,8 @@ const en = {
   admin_support: "Support", admin_messages_title: "Messages received", admin_no_messages: "No messages yet.",
 
   admin_accounts_title: "Accounts created", admin_no_accounts: "No accounts yet.",
+  admin_reports_title: "Reports", admin_no_reports: "No reports yet.",
+  admin_report_resolve: "Resolve", admin_report_dismiss: "Dismiss",
   admin_col_email: "E-mail", admin_col_role: "Role", admin_col_status: "Status", admin_col_created: "Created on",
   role_chercheur: "Seeker", role_bailleur: "Owner", role_admin: "Admin",
   admin_delete_account_confirm: "Permanently delete the account {email}? Their listings, messages and favourites will also be deleted. This action cannot be undone.",

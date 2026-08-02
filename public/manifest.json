@@ -1,0 +1,12 @@
+{
+  "name": "CléSchengen",
+  "short_name": "CléSchengen",
+  "description": "Location et vente vérifiées dans l'espace Schengen : maisons, chambres, voitures, appareils.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6F3EC",
+  "theme_color": "#16233F",
+  "icons": [
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

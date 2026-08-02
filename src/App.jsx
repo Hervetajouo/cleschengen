@@ -5,13 +5,14 @@ import {
   ShieldCheck, ChevronDown, KeyRound, ListChecks, Loader2, Info, Building2,
   ImagePlus, Trash2, BadgeCheck, Smartphone, Sparkles, ImageOff, ExternalLink,
   LogOut, UploadCloud, UserCog, ShieldQuestion, Mail, KeySquare, Package, MessageCircleQuestion,
-  Heart, MessageCircle, Share2,
+  Heart, MessageCircle, Share2, Star, Flag,
 } from "lucide-react";
 import { supabase } from "./supabaseClient.js";
 import { LANGS, t } from "./i18n.js";
 import { COUNTRY_GUIDES, GENERIC_GUIDE } from "./guides.js";
 import { COUNTRY_COORDS } from "./mapData.js";
 import { TERMS_CONTENT, PRIVACY_CONTENT } from "./legal.js";
+import { CURRENCY_LABELS, convertPrice } from "./currency.js";
 
 /* ---------- Design tokens ---------- */
 const C = {
@@ -242,7 +243,7 @@ function Select({ value, onChange, children }) {
 }
 
 /* ---------- Ticket-style listing card ---------- */
-function ListingCard({ listing, unlocked, onOpen, lang, favorited, onToggleFavorite }) {
+function ListingCard({ listing, unlocked, onOpen, lang, currency, favorited, onToggleFavorite }) {
   const TypeIcon = TYPES[listing.type].icon;
   const unit = priceUnit(lang, listing.transaction, listing.type);
   const cover = listing.photos && listing.photos[0];
@@ -283,6 +284,12 @@ function ListingCard({ listing, unlocked, onOpen, lang, favorited, onToggleFavor
             {detailsSummary(lang, listing) && (
               <p className="mt-1 text-xs" style={{ color: C.slate }}>{detailsSummary(lang, listing)}</p>
             )}
+            {listing.ownerReviewCount > 0 && (
+              <div className="mt-1 flex items-center gap-1 text-xs" style={{ color: C.gold }}>
+                <Star size={12} fill={C.gold} />
+                <span>{listing.ownerRating} ({listing.ownerReviewCount})</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -296,6 +303,9 @@ function ListingCard({ listing, unlocked, onOpen, lang, favorited, onToggleFavor
           </span>
           {unit && <span className="text-xs" style={{ color: C.slate }}>{unit}</span>}
         </div>
+        {currency && currency !== "EUR" && (
+          <p className="text-xs" style={{ color: C.slate }}>≈ {convertPrice(listing.price, currency)}</p>
+        )}
 
         <p className="mt-1 tracking-wide" style={{ fontFamily: "'IBM Plex Mono', monospace", color: C.slate, fontSize: "11px" }}>
           {t(lang, "modal_ref")} {listing.id}
@@ -322,16 +332,93 @@ function ListingCard({ listing, unlocked, onOpen, lang, favorited, onToggleFavor
 }
 
 /* ---------- Detail + payment modal ---------- */
-function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequireAuth, lang, allListings, favorited, onToggleFavorite }) {
+/* ---------- Report a listing ---------- */
+function ReportModal({ listingId, lang, session, onClose }) {
+  const [reason, setReason] = useState("fraudulent");
+  const [details, setDetails] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submit() {
+    setSaving(true);
+    setError("");
+    const { error: err } = await supabase.from("reports").insert({
+      reporter_id: session.user.id, listing_id: listingId, reason, details: details.trim() || null,
+    });
+    setSaving(false);
+    if (err) { setError(t(lang, "report_error")); return; }
+    setSaved(true);
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }} onClick={onClose}>
+      <div className="w-full max-w-sm rounded-2xl p-5 shadow-xl" style={{ background: C.card }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="flex items-center gap-1.5 text-base font-semibold" style={{ color: C.ink }}>
+            <Flag size={16} style={{ color: C.rust }} /> {t(lang, "report_title")}
+          </h3>
+          <button onClick={onClose} className="clesch-focus" style={{ color: C.slate }}><X size={17} /></button>
+        </div>
+
+        {saved ? (
+          <p className="mt-4 text-sm" style={{ color: C.green }}>{t(lang, "report_saved")}</p>
+        ) : (
+          <>
+            <label className="mt-3 block text-xs font-medium" style={{ color: C.slate }}>{t(lang, "report_reason")}</label>
+            <Select value={reason} onChange={(e) => setReason(e.target.value)}>
+              <option value="fraudulent">{t(lang, "report_reason_fraudulent")}</option>
+              <option value="fake_photos">{t(lang, "report_reason_fake_photos")}</option>
+              <option value="inappropriate">{t(lang, "report_reason_inappropriate")}</option>
+              <option value="other">{t(lang, "report_reason_other")}</option>
+            </Select>
+            <textarea value={details} onChange={(e) => setDetails(e.target.value)} rows={3}
+              placeholder={t(lang, "report_details_ph")}
+              className="clesch-focus mt-3 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+            {error && <p className="mt-2 text-xs" style={{ color: C.rust }}>{error}</p>}
+            <button disabled={saving} onClick={submit}
+              className="clesch-focus mt-3 w-full rounded-lg py-2.5 text-sm font-semibold text-white disabled:opacity-60" style={{ background: C.rust }}>
+              {saving ? <Loader2 size={16} className="animate-spin mx-auto" /> : t(lang, "report_submit")}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequireAuth, lang, currency, allListings, favorited, onToggleFavorite }) {
   const [stage, setStage] = useState(unlocked ? "revealed" : "detail");
   const [copied, setCopied] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [error, setError] = useState("");
 
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState("");
   const [sendingMsg, setSendingMsg] = useState(false);
   const [msgError, setMsgError] = useState("");
+
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSaving, setReviewSaving] = useState(false);
+  const [reviewSaved, setReviewSaved] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+
+  async function submitReview() {
+    if (reviewRating === 0) return;
+    setReviewSaving(true);
+    setReviewError("");
+    const { error: err } = await supabase.from("reviews").insert({
+      listing_id: listing.id, reviewer_id: session.user.id, rating: reviewRating, comment: reviewComment.trim() || null,
+    });
+    setReviewSaving(false);
+    if (err) {
+      setReviewError(/duplicate key/i.test(err.message) ? t(lang, "review_already_left") : t(lang, "review_error"));
+      return;
+    }
+    setReviewSaved(true);
+  }
 
   const loadMessages = useCallback(async () => {
     if (!session) { setMessages([]); return; }
@@ -428,6 +515,9 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
             <span className="text-sm font-semibold">{t(lang, `type_${listing.type}`)} · {t(lang, `trans_${listing.transaction}`)}</span>
           </div>
           <div className="flex items-center gap-3">
+            <button onClick={() => { if (!session) { onClose(); onRequireAuth(); return; } setShowReport(true); }} className="clesch-focus" style={{ color: "rgba(255,255,255,0.8)" }} title={t(lang, "report_button")}>
+              <Flag size={17} />
+            </button>
             <button onClick={shareListing} className="clesch-focus" style={{ color: "rgba(255,255,255,0.8)" }}>
               <Share2 size={18} />
             </button>
@@ -437,6 +527,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
             <button onClick={onClose} className="clesch-focus hover:text-white" style={{ color: "rgba(255,255,255,0.8)" }}><X size={18} /></button>
           </div>
         </div>
+        {showReport && <ReportModal listingId={listing.id} lang={lang} session={session} onClose={() => setShowReport(false)} />}
         {shareCopied && (
           <p className="px-4 pt-2 text-xs" style={{ color: C.green, background: C.ink }}>{t(lang, "modal_link_copied")}</p>
         )}
@@ -487,6 +578,9 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
             </span>
             {unit && <span className="text-sm" style={{ color: C.slate }}>{unit}</span>}
           </div>
+          {currency && currency !== "EUR" && (
+            <p className="text-xs" style={{ color: C.slate }}>≈ {convertPrice(listing.price, currency)} ({t(lang, "currency_estimate")})</p>
+          )}
           {priceHint && (
             <p className="mt-1 text-xs font-medium" style={{ color: priceHint.color }}>{t(lang, priceHint.key)}</p>
           )}
@@ -590,6 +684,33 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
               <p className="mt-3 flex items-center gap-1.5 text-xs" style={{ color: C.slate }}>
                 <Info size={12} /> {t(lang, "modal_history_hint")}
               </p>
+
+              <div className="mt-4 rounded-xl p-4" style={{ background: C.paper, border: `1px solid ${C.line}` }}>
+                {reviewSaved ? (
+                  <p className="flex items-center gap-1.5 text-sm" style={{ color: C.green }}>
+                    <Star size={14} fill={C.green} /> {t(lang, "review_saved")}
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-sm font-semibold" style={{ color: C.ink }}>{t(lang, "review_title")}</p>
+                    <div className="mt-2 flex gap-1">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button key={n} onClick={() => setReviewRating(n)} className="clesch-focus">
+                          <Star size={22} fill={n <= reviewRating ? C.gold : "none"} style={{ color: C.gold }} />
+                        </button>
+                      ))}
+                    </div>
+                    <textarea value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} rows={2}
+                      placeholder={t(lang, "review_comment_ph")}
+                      className="clesch-focus mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line, background: C.card }} />
+                    {reviewError && <p className="mt-1 text-xs" style={{ color: C.rust }}>{reviewError}</p>}
+                    <button disabled={reviewRating === 0 || reviewSaving} onClick={submitReview}
+                      className="clesch-focus mt-2 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" style={{ background: C.ink }}>
+                      {reviewSaving ? <Loader2 size={15} className="animate-spin" /> : t(lang, "review_submit")}
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -1588,6 +1709,21 @@ function AdminPanel({ lang }) {
     setMessagesLoading(false);
   }, []);
 
+  const [reports, setReports] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(true);
+
+  const loadReports = useCallback(async () => {
+    setReportsLoading(true);
+    const { data } = await supabase.from("reports").select("*").order("created_at", { ascending: false });
+    setReports(data || []);
+    setReportsLoading(false);
+  }, []);
+
+  async function updateReportStatus(id, status) {
+    await supabase.from("reports").update({ status }).eq("id", id);
+    loadReports();
+  }
+
   const [accounts, setAccounts] = useState([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
   const [deletingAccountId, setDeletingAccountId] = useState(null);
@@ -1612,6 +1748,12 @@ function AdminPanel({ lang }) {
       .order("created_at", { ascending: false });
     setAccounts(data || []);
     setAccountsLoading(false);
+  }, []);
+
+  const [revenue, setRevenue] = useState(null);
+  const loadRevenue = useCallback(async () => {
+    const { data } = await supabase.rpc("admin_revenue_summary");
+    setRevenue(data?.[0] || null);
   }, []);
 
   const [analytics, setAnalytics] = useState(null);
@@ -1654,7 +1796,7 @@ function AdminPanel({ lang }) {
     loadListingsAdmin();
   }
 
-  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); loadAnalytics(); loadAccounts(); }, [load, loadMessages, loadListingsAdmin, loadAnalytics, loadAccounts]);
+  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); loadAnalytics(); loadAccounts(); loadReports(); loadRevenue(); }, [load, loadMessages, loadListingsAdmin, loadAnalytics, loadAccounts, loadReports, loadRevenue]);
 
   async function viewDocument(row) {
     if (!row.id_document_path) return;
@@ -1679,7 +1821,27 @@ function AdminPanel({ lang }) {
   return (
     <div>
       <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "admin_title")}</p>
-      <h1 className="mt-1 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_visitors_title")}</h1>
+      <h1 className="mt-1 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_revenue_title")}</h1>
+      <p className="mt-1 text-xs" style={{ color: C.slate }}>{t(lang, "admin_revenue_note")}</p>
+
+      {revenue && (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+            <p className="text-xs" style={{ color: C.slate }}>{t(lang, "admin_revenue_unlocks")}</p>
+            <p className="mt-1 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>
+              {formatPrice((revenue.total_unlocks * UNLOCK_FEE).toFixed(2))} €
+            </p>
+            <p className="mt-0.5 text-xs" style={{ color: C.slate }}>{revenue.total_unlocks} × {UNLOCK_FEE.toFixed(2)} €</p>
+          </div>
+          <div className="rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+            <p className="text-xs" style={{ color: C.slate }}>{t(lang, "admin_revenue_subs")}</p>
+            <p className="mt-1 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{revenue.active_subscriptions}</p>
+            <p className="mt-0.5 text-xs" style={{ color: C.slate }}>{t(lang, "admin_revenue_subs_note")}</p>
+          </div>
+        </div>
+      )}
+
+      <h1 className="mt-10 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_visitors_title")}</h1>
 
       {analyticsLoading ? (
         <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> {t(lang, "admin_loading")}</div>
@@ -1824,6 +1986,45 @@ function AdminPanel({ lang }) {
                 className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60" style={{ background: C.rust }}>
                 <Trash2 size={13} /> {t(lang, "admin_delete")}
               </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className="mt-10 font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "admin_moderation")}</p>
+      <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_reports_title")}</h2>
+
+      {reportsLoading ? (
+        <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> {t(lang, "admin_loading")}</div>
+      ) : reports.length === 0 ? (
+        <div className="mt-3 rounded-xl border p-6 text-center text-sm" style={{ borderColor: C.line, color: C.slate }}>
+          {t(lang, "admin_no_reports")}
+        </div>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {reports.map((r) => (
+            <div key={r.id} className="rounded-xl p-3.5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+              <div className="flex items-center justify-between">
+                <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{
+                  background: r.status === "open" ? "#F7EAE6" : r.status === "resolved" ? "#EAF3EE" : C.paper,
+                  color: r.status === "open" ? C.rust : r.status === "resolved" ? C.green : C.slate,
+                }}>
+                  {r.status}
+                </span>
+                <span className="text-xs" style={{ color: C.slate, fontFamily: "'IBM Plex Mono', monospace" }}>{r.listing_id}</span>
+              </div>
+              <p className="mt-1.5 text-sm font-medium" style={{ color: C.ink }}>{t(lang, `report_reason_${r.reason}`)}</p>
+              {r.details && <p className="mt-0.5 text-sm" style={{ color: C.slate }}>{r.details}</p>}
+              {r.status === "open" && (
+                <div className="mt-2 flex gap-2">
+                  <button onClick={() => updateReportStatus(r.id, "resolved")} className="clesch-focus rounded-lg border px-2.5 py-1 text-xs font-medium" style={{ borderColor: C.line, color: C.green }}>
+                    {t(lang, "admin_report_resolve")}
+                  </button>
+                  <button onClick={() => updateReportStatus(r.id, "dismissed")} className="clesch-focus rounded-lg border px-2.5 py-1 text-xs font-medium" style={{ borderColor: C.line, color: C.slate }}>
+                    {t(lang, "admin_report_dismiss")}
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -2448,6 +2649,9 @@ export default function CleSchengen() {
   const [lang, setLang] = useState(() => localStorage.getItem("clesch-lang") || "fr");
   useEffect(() => { localStorage.setItem("clesch-lang", lang); }, [lang]);
 
+  const [currency, setCurrency] = useState(() => localStorage.getItem("clesch-currency") || "EUR");
+  useEffect(() => { localStorage.setItem("clesch-currency", currency); }, [currency]);
+
   const [tab, setTab] = useState("how"); // how | browse | add | history | premium | admin
 
   /* ---- Anonymous, privacy-friendly visit tracking (no personal data) ---- */
@@ -2574,6 +2778,8 @@ export default function CleSchengen() {
           availableFrom: l.available_from,
           ownerId: l.owner_id,
           contactVisible: l.phone !== null,
+          ownerRating: l.owner_rating,
+          ownerReviewCount: l.owner_review_count || 0,
         }))
       );
     }
@@ -2818,6 +3024,17 @@ export default function CleSchengen() {
               <option key={l.code} value={l.code} style={{ color: C.ink }}>{l.label}</option>
             ))}
           </select>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            aria-label={t(lang, "currency_label")}
+            className="clesch-focus rounded-lg py-1.5 pl-2 pr-1 text-xs font-medium"
+            style={{ background: "rgba(255,255,255,0.12)", color: "white", border: "none" }}
+          >
+            {CURRENCY_LABELS.map((c) => (
+              <option key={c} value={c} style={{ color: C.ink }}>{c}</option>
+            ))}
+          </select>
           {!authLoading && (session ? (
             <>
               <span className="hidden text-xs sm:inline" style={{ color: "rgba(255,255,255,0.75)" }}>{session.user.email}</span>
@@ -2977,7 +3194,7 @@ export default function CleSchengen() {
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {filtered.map((l) => (
-                      <ListingCard key={l.id} listing={l} unlocked={l.contactVisible} onOpen={openListing} lang={lang} favorited={!!favorites[l.id]} onToggleFavorite={toggleFavorite} />
+                      <ListingCard key={l.id} listing={l} unlocked={l.contactVisible} onOpen={openListing} lang={lang} currency={currency} favorited={!!favorites[l.id]} onToggleFavorite={toggleFavorite} />
                     ))}
                   </div>
                 )}
@@ -3114,7 +3331,7 @@ export default function CleSchengen() {
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {favoritesList.map((l) => (
-                      <ListingCard key={l.id} listing={l} unlocked={l.contactVisible} onOpen={openListing} lang={lang} favorited={!!favorites[l.id]} onToggleFavorite={toggleFavorite} />
+                      <ListingCard key={l.id} listing={l} unlocked={l.contactVisible} onOpen={openListing} lang={lang} currency={currency} favorited={!!favorites[l.id]} onToggleFavorite={toggleFavorite} />
                     ))}
                   </div>
                 )}
@@ -3190,6 +3407,7 @@ export default function CleSchengen() {
           onUnlock={handleUnlock}
           onRequireAuth={() => setAuthModal("login")}
           lang={lang}
+          currency={currency}
           allListings={listings}
           favorited={!!favorites[active.id]}
           onToggleFavorite={toggleFavorite}
