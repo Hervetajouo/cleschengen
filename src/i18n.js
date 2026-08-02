@@ -85,6 +85,7 @@ const fr = {
   msg_from_owner: "Le propriétaire", msg_from_you: "Toi",
   msg_inbox_title: "Messages reçus", msg_inbox_empty: "Aucune question reçue pour l'instant.",
   msg_from_seeker: "Le chercheur", msg_you_replied: "Toi", msg_reply_placeholder: "Écris ta réponse…",
+  msg_rate_limited: "Trop de messages envoyés récemment. Réessaie dans quelques minutes.",
   add_gate_phone_error: "Vérifie ton numéro de téléphone avant de publier.",
   add_gate_captcha_error: "Le code anti-robot saisi est incorrect.",
 
@@ -178,7 +179,7 @@ const fr = {
   vg_title: "Vérification d'identité requise",
   vg_rejected_prefix: "Ta précédente demande a été refusée",
   vg_rejected_suffix: "Tu peux renvoyer un document.",
-  vg_upload_intro: "Envoie une photo ou un scan lisible d'une pièce d'identité (carte d'identité, passeport). Un membre de l'équipe vérifie manuellement chaque demande avant d'autoriser la publication d'annonces.",
+  vg_upload_intro: "Envoie une photo ou un scan lisible d'un des documents suivants : carte nationale d'identité, passeport, permis de séjour, ou permis de conduire. Un membre de l'équipe vérifie manuellement chaque demande avant d'autoriser la publication d'annonces.",
   vg_choose_file: "Choisir un fichier",
   vg_submit: "Envoyer pour vérification",
   vg_upload_error: "Choisis un fichier (photo ou PDF de ta pièce d'identité).",
@@ -292,6 +293,7 @@ const en = {
   msg_from_owner: "The owner", msg_from_you: "You",
   msg_inbox_title: "Messages received", msg_inbox_empty: "No questions received yet.",
   msg_from_seeker: "The seeker", msg_you_replied: "You", msg_reply_placeholder: "Write your reply…",
+  msg_rate_limited: "Too many messages sent recently. Try again in a few minutes.",
   add_gate_phone_error: "Verify your phone number before publishing.",
   add_gate_captcha_error: "The anti-robot code you entered is incorrect.",
 
@@ -385,7 +387,7 @@ const en = {
   vg_title: "Identity verification required",
   vg_rejected_prefix: "Your previous request was rejected",
   vg_rejected_suffix: "You can resend a document.",
-  vg_upload_intro: "Send a clear photo or scan of an ID document (ID card, passport). A team member manually reviews every request before allowing listings to be published.",
+  vg_upload_intro: "Send a clear photo or scan of one of the following documents: national ID card, passport, residence permit, or driving licence. A team member manually reviews every request before allowing listings to be published.",
   vg_choose_file: "Choose a file",
   vg_submit: "Submit for verification",
   vg_upload_error: "Choose a file (photo or PDF of your ID document).",

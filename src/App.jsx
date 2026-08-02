@@ -331,6 +331,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState("");
   const [sendingMsg, setSendingMsg] = useState(false);
+  const [msgError, setMsgError] = useState("");
 
   const loadMessages = useCallback(async () => {
     if (!session) { setMessages([]); return; }
@@ -349,6 +350,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
     if (!session) { onClose(); onRequireAuth(); return; }
     if (!messageText.trim()) return;
     setSendingMsg(true);
+    setMsgError("");
     const { error: err } = await supabase.from("listing_messages").insert({
       listing_id: listing.id, seeker_id: session.user.id, from_owner: false, message: messageText.trim(),
     });
@@ -358,6 +360,8 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
       }).then(null, () => {});
       setMessageText("");
       loadMessages();
+    } else {
+      setMsgError(t(lang, "msg_rate_limited"));
     }
     setSendingMsg(false);
   }
@@ -545,6 +549,7 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
                   {sendingMsg ? <Loader2 size={15} className="animate-spin" /> : t(lang, "msg_send")}
                 </button>
               </div>
+              {msgError && <p className="mt-2 text-xs" style={{ color: C.rust }}>{msgError}</p>}
             </div>
           )}
 
@@ -1937,7 +1942,8 @@ function ContactModal({ defaultEmail, onClose, lang }) {
       }).catch(() => {});
       setSent(true);
     } catch (err) {
-      setError(err.message || "Échec de l'envoi, réessaie.");
+      const isRateLimited = /row-level security/i.test(err.message || "");
+      setError(isRateLimited ? t(lang, "msg_rate_limited") : (err.message || "Échec de l'envoi, réessaie."));
     } finally {
       setBusy(false);
     }
@@ -2220,6 +2226,7 @@ function OwnerMessages({ lang }) {
   const [threads, setThreads] = useState([]); // grouped by listing_id + seeker_id
   const [loading, setLoading] = useState(true);
   const [replyText, setReplyText] = useState({});
+  const [replyError, setReplyError] = useState({});
   const [sendingId, setSendingId] = useState(null);
 
   const load = useCallback(async () => {
@@ -2245,6 +2252,7 @@ function OwnerMessages({ lang }) {
     const text = (replyText[key] || "").trim();
     if (!text) return;
     setSendingId(key);
+    setReplyError((r) => ({ ...r, [key]: "" }));
     const { error } = await supabase.from("listing_messages").insert({
       listing_id: listingId, seeker_id: seekerId, from_owner: true, message: text,
     });
@@ -2254,6 +2262,8 @@ function OwnerMessages({ lang }) {
       }).then(null, () => {});
       setReplyText((r) => ({ ...r, [key]: "" }));
       load();
+    } else {
+      setReplyError((r) => ({ ...r, [key]: t(lang, "msg_rate_limited") }));
     }
     setSendingId(null);
   }
@@ -2302,6 +2312,7 @@ function OwnerMessages({ lang }) {
                     {sendingId === key ? <Loader2 size={15} className="animate-spin" /> : t(lang, "msg_send")}
                   </button>
                 </div>
+                {replyError[key] && <p className="mt-2 text-xs" style={{ color: C.rust }}>{replyError[key]}</p>}
               </div>
             );
           })}
