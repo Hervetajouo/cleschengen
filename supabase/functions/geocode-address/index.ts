@@ -3,7 +3,7 @@
 // Appelé côté serveur pour respecter sa politique d'usage (identification
 // via un en-tête User-Agent descriptif).
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("SITE_URL") ?? "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 

@@ -1211,7 +1211,7 @@ function CookieBanner({ lang, onOpenPrivacy }) {
   );
 }
 
-const HERO_IMAGES = ["/hero-bg-2.png", "/hero-bg-3.png", "/hero-bg-4.png", "/hero-bg-5.png", "/hero-bg-6.png", "/hero-bg.png"];
+const HERO_IMAGES = ["/hero-bg.png", "/hero-bg-2.png", "/hero-bg-3.png", "/hero-bg-4.png", "/hero-bg-5.png", "/hero-bg-6.png"];
 
 function HowItWorks({ goTo, lang }) {
   const [heroIndex, setHeroIndex] = useState(0);
@@ -1244,14 +1244,14 @@ function HowItWorks({ goTo, lang }) {
           ))}
           <div
             className="absolute inset-0"
-            style={{ background: "linear-gradient(180deg, rgba(22,35,63,0.80) 0%, rgba(22,35,63,0.55) 45%, rgba(22,35,63,0.92) 100%)" }}
+            style={{ background: "linear-gradient(180deg, rgba(22,35,63,0.62) 0%, rgba(22,35,63,0.28) 45%, rgba(22,35,63,0.75) 100%)" }}
           />
           <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-5 py-20 text-center sm:py-28">
             <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.gold }}>CléSchengen</p>
-            <h1 className="mt-3 max-w-3xl text-4xl font-semibold text-white sm:text-5xl" style={{ fontFamily: "'Fraunces', serif" }}>
+            <h1 className="mt-3 max-w-3xl text-4xl font-semibold text-white sm:text-5xl" style={{ fontFamily: "'Fraunces', serif", textShadow: "0 2px 12px rgba(0,0,0,0.55)" }}>
               {t(lang, "how_title")}
             </h1>
-            <p className="mt-4 max-w-2xl text-base" style={{ color: "rgba(255,255,255,0.85)" }}>
+            <p className="mt-4 max-w-2xl text-base" style={{ color: "rgba(255,255,255,0.9)", textShadow: "0 1px 8px rgba(0,0,0,0.5)" }}>
               {t(lang, "how_subtitle")}
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -1354,7 +1354,7 @@ function AuthModal({ mode: initialMode, onClose, lang }) {
             <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "auth_password")}</label>
             <div className="relative mt-1">
               <KeySquare size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.slate }} />
-              <input required type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
+              <input required type="password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)}
                 className="clesch-focus w-full rounded-lg border py-2 pl-8 pr-3 text-sm outline-none" style={{ borderColor: C.line }} />
             </div>
           </div>

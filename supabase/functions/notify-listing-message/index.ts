@@ -2,8 +2,12 @@
 // quand un nouveau message arrive dans une conversation liée à une annonce.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("SITE_URL") ?? "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -58,7 +62,7 @@ Deno.serve(async (req) => {
         sender: { email: Deno.env.get("SENDER_EMAIL")!, name: "CléSchengen" },
         to: [{ email: recipientProfile.email }],
         subject: "Nouveau message concernant une annonce CléSchengen",
-        htmlContent: `<p>Tu as reçu un nouveau message concernant l'annonce à ${listing.city}, ${listing.country}.</p>
+        htmlContent: `<p>Tu as reçu un nouveau message concernant l'annonce à ${escapeHtml(listing.city)}, ${escapeHtml(listing.country)}.</p>
           <p><a href="${siteUrl}">Voir sur CléSchengen</a></p>`,
       }),
     });

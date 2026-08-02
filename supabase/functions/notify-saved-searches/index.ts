@@ -3,8 +3,12 @@
 // après la publication de son annonce.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("SITE_URL") ?? "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -62,7 +66,7 @@ Deno.serve(async (req) => {
           to: [{ email: row.email }],
           subject: "Une nouvelle annonce correspond à ton alerte",
           htmlContent: `<p>Une nouvelle annonce vient d'être publiée et correspond à ton alerte :</p>
-            <p><strong>${listing.city}, ${listing.country}</strong> — ${listing.price} €</p>
+            <p><strong>${escapeHtml(listing.city)}, ${escapeHtml(listing.country)}</strong> — ${escapeHtml(listing.price)} €</p>
             <p><a href="${siteUrl}">Voir sur CléSchengen</a></p>`,
         }),
       });

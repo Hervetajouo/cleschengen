@@ -2,9 +2,13 @@
 // "Contactez-nous". Utilise l'API Brevo (déjà configurée pour les autres
 // notifications). Peut être appelée par un visiteur non connecté — c'est
 // volontaire, le formulaire de contact doit rester accessible à tous.
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": Deno.env.get("SITE_URL") ?? "*",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   };
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -23,7 +27,7 @@ Deno.serve(async (req) => {
         sender: { email: Deno.env.get("SENDER_EMAIL")!, name: "CléSchengen" },
         to: [{ email: Deno.env.get("ADMIN_EMAIL")! }],
         subject: "Nouveau message via « Contactez-nous »",
-        htmlContent: `<p><strong>De :</strong> ${email}</p><p><strong>Message :</strong></p><p>${message.replace(/\n/g, "<br/>")}</p>`,
+        htmlContent: `<p><strong>De :</strong> ${escapeHtml(email)}</p><p><strong>Message :</strong></p><p>${escapeHtml(message).replace(/\n/g, "<br/>")}</p>`,
       }),
     });
     if (!brevoRes.ok) {

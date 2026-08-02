@@ -3,8 +3,12 @@
 // même adresse déjà configurée comme expéditeur dans Supabase Auth.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("SITE_URL") ?? "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -15,6 +19,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Non authentifié");
 
+    // Vérifie que l'appelant est bien un admin (pas n'importe quel utilisateur).
     const supabaseUser = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -45,7 +50,7 @@ Deno.serve(async (req) => {
       ? `<p>Bonne nouvelle : ta pièce d'identité a été vérifiée par notre équipe.</p>
          <p>Tu peux maintenant publier des annonces sur CléSchengen.</p>`
       : `<p>Ta demande de vérification d'identité n'a pas été acceptée.</p>
-         ${reason ? `<p>Motif : ${reason}</p>` : ""}
+         ${reason ? `<p>Motif : ${escapeHtml(reason)}</p>` : ""}
          <p>Tu peux renvoyer un nouveau document depuis l'onglet « Devenir bailleur ».</p>`;
 
     const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
