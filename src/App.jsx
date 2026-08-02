@@ -2760,22 +2760,13 @@ export default function CleSchengen() {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       loadProfile(data.session?.user?.id).finally(() => setAuthLoading(false));
-      if (data.session) registerPendingReferral();
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       loadProfile(newSession?.user?.id);
-      if (newSession) registerPendingReferral();
     });
     return () => sub.subscription.unsubscribe();
   }, [loadProfile]);
-
-  async function registerPendingReferral() {
-    const ref = localStorage.getItem("clesch-pending-ref");
-    if (!ref) return;
-    localStorage.removeItem("clesch-pending-ref");
-    await supabase.rpc("register_referral", { p_referrer_id: ref }).then(null, () => {});
-  }
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -2864,21 +2855,25 @@ export default function CleSchengen() {
 
   const [referralCount, setReferralCount] = useState(0);
   const [wasReferred, setWasReferred] = useState(false);
+  const [myReferralCode, setMyReferralCode] = useState(null);
+  const [referralCodeLoading, setReferralCodeLoading] = useState(false);
   const loadReferralInfo = useCallback(async (uid) => {
-    if (!uid) { setReferralCount(0); setWasReferred(false); return; }
+    if (!uid) { setReferralCount(0); setWasReferred(false); setMyReferralCode(null); return; }
     const { data: count } = await supabase.rpc("my_referral_count");
     setReferralCount(count || 0);
     const { data: referredRow } = await supabase.from("referrals").select("id").eq("referred_id", uid).maybeSingle();
     setWasReferred(!!referredRow);
   }, []);
 
-  useEffect(() => { loadListings(); }, [loadListings]);
+  async function getMyReferralCode() {
+    if (myReferralCode || referralCodeLoading) return;
+    setReferralCodeLoading(true);
+    const { data, error } = await supabase.functions.invoke("get-referral-code");
+    setReferralCodeLoading(false);
+    if (!error && data?.code) setMyReferralCode(data.code);
+  }
 
-  /* ---- Referral link capture: ?ref=<user_id> is stored for later ---- */
-  useEffect(() => {
-    const ref = new URLSearchParams(window.location.search).get("ref");
-    if (ref) localStorage.setItem("clesch-pending-ref", ref);
-  }, []);
+  useEffect(() => { loadListings(); }, [loadListings]);
 
   /* ---- Deep link support: /annonce/:id opens that listing directly ---- */
   useEffect(() => {
@@ -2896,6 +2891,7 @@ export default function CleSchengen() {
   useEffect(() => { loadSavedSearches(session?.user?.id); }, [session, loadSavedSearches]);
   useEffect(() => { loadSubscription(session?.user?.id); }, [session, loadSubscription]);
   useEffect(() => { loadReferralInfo(session?.user?.id); }, [session, loadReferralInfo]);
+  useEffect(() => { if (tab === "premium" && session) getMyReferralCode(); }, [tab, session]);
 
   /* ---- Handle the redirect back from Stripe Checkout ---- */
   useEffect(() => {
@@ -3367,15 +3363,23 @@ export default function CleSchengen() {
               <div className="mt-8 rounded-xl p-5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
                 <p className="text-sm font-semibold" style={{ color: C.ink }}>{t(lang, "referral_title")}</p>
                 <p className="mt-1 text-sm" style={{ color: C.slate }}>{t(lang, "referral_subtitle")}</p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <input readOnly value={`${window.location.origin}/?ref=${session.user.id}`}
-                    className="clesch-focus flex-1 rounded-lg border px-3 py-2 text-xs outline-none" style={{ borderColor: C.line, background: C.paper, minWidth: "220px" }} />
-                  <button
-                    onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/?ref=${session.user.id}`).then(null, () => {}); }}
-                    className="clesch-focus rounded-lg px-3 py-2 text-xs font-semibold text-white" style={{ background: C.ink }}>
-                    {t(lang, "referral_copy")}
+                {myReferralCode ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="rounded-lg border px-4 py-2 text-lg font-semibold tracking-wide" style={{ borderColor: C.gold, color: C.gold, fontFamily: "'IBM Plex Mono', monospace" }}>
+                      {myReferralCode}
+                    </span>
+                    <button
+                      onClick={() => { navigator.clipboard?.writeText(myReferralCode).then(null, () => {}); }}
+                      className="clesch-focus rounded-lg px-3 py-2 text-xs font-semibold text-white" style={{ background: C.ink }}>
+                      {t(lang, "referral_copy")}
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={getMyReferralCode} disabled={referralCodeLoading}
+                    className="clesch-focus mt-3 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" style={{ background: C.gold }}>
+                    {referralCodeLoading ? <Loader2 size={15} className="animate-spin" /> : t(lang, "referral_get_code")}
                   </button>
-                </div>
+                )}
                 <p className="mt-2 text-xs" style={{ color: C.slate }}>{t(lang, "referral_count").replace("{n}", referralCount)}</p>
               </div>
             )}
