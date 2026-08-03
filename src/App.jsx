@@ -35,6 +35,14 @@ const FONTS = `
     100% { opacity: 1; transform: scale(1) rotate(-3deg); }
   }
   .stamp-reveal { animation: stampIn 0.45s cubic-bezier(.2,.8,.3,1.2); }
+  @keyframes donatePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(162,73,54,0.45); }
+    50% { box-shadow: 0 0 0 8px rgba(162,73,54,0); }
+  }
+  .donate-pulse { animation: donatePulse 2.2s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .donate-pulse { animation: none; }
+  }
   .clesch-focus:focus-visible { outline: 2px solid #B8863B; outline-offset: 2px; }
   .clesch-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 `;
@@ -3566,7 +3574,7 @@ export default function CleSchengen() {
           </p>
           <p className="mt-1 text-xs" style={{ color: C.slate }}>{t(lang, "support_subtitle")}</p>
           <a href={DONATION_URL} target="_blank" rel="noopener noreferrer"
-            className="clesch-focus mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: C.rust }}>
+            className="clesch-focus donate-pulse mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: C.rust }}>
             {t(lang, "support_cta")} <ExternalLink size={14} />
           </a>
         </div>
