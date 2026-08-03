@@ -172,7 +172,7 @@ const PLANS = [
 // ⚠️ À remplacer : créez un Payment Link Stripe avec "Le client choisit le
 // montant" activé (Product catalog → Create product → Payment Link →
 // "Customer chooses price"), puis collez son URL ici.
-const DONATION_URL = "https://buy.stripe.com/REMPLACE_MOI";
+const DONATION_URL = "https://buy.stripe.com/test_7sYfZg0CBgwQ7Qu3uWcMM00";
 
 /* Reads an image file, downsizes it, and returns a compact JPEG data URL.
    Keeps listing photos small enough to store as plain text in the shared database. */
