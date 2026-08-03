@@ -3506,28 +3506,34 @@ export default function CleSchengen() {
           )}
         </nav>
         <div className="flex items-center gap-2 text-sm">
-          <select
-            value={lang}
-            onChange={(e) => setLang(e.target.value)}
-            aria-label={t(lang, "language_label")}
-            className="clesch-focus rounded-lg py-1.5 pl-2 pr-1 text-xs font-medium"
-            style={{ background: "rgba(255,255,255,0.12)", color: "white", border: "none" }}
-          >
-            {LANGS.map((l) => (
-              <option key={l.code} value={l.code} style={{ color: C.ink }}>{l.label}</option>
-            ))}
-          </select>
-          <select
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-            aria-label={t(lang, "currency_label")}
-            className="clesch-focus rounded-lg py-1.5 pl-2 pr-1 text-xs font-medium"
-            style={{ background: "rgba(255,255,255,0.12)", color: "white", border: "none" }}
-          >
-            {CURRENCY_LABELS.map((c) => (
-              <option key={c} value={c} style={{ color: C.ink }}>{c}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value)}
+              aria-label={t(lang, "language_label")}
+              className="clesch-focus appearance-none rounded-lg py-1.5 pl-2 pr-6 text-xs font-medium"
+              style={{ background: "rgba(255,255,255,0.12)", color: "white", border: "none" }}
+            >
+              {LANGS.map((l) => (
+                <option key={l.code} value={l.code} style={{ color: C.ink }}>{l.label}</option>
+              ))}
+            </select>
+            <ChevronDown size={12} className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.8)" }} />
+          </div>
+          <div className="relative">
+            <select
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              aria-label={t(lang, "currency_label")}
+              className="clesch-focus appearance-none rounded-lg py-1.5 pl-2 pr-6 text-xs font-medium"
+              style={{ background: "rgba(255,255,255,0.12)", color: "white", border: "none" }}
+            >
+              {CURRENCY_LABELS.map((c) => (
+                <option key={c} value={c} style={{ color: C.ink }}>{c}</option>
+              ))}
+            </select>
+            <ChevronDown size={12} className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.8)" }} />
+          </div>
           {!authLoading && (session ? (
             <>
               <span className="hidden text-xs sm:inline" style={{ color: "rgba(255,255,255,0.75)" }}>{session.user.email}</span>
