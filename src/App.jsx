@@ -83,7 +83,7 @@ function detailsSummary(lang, listing) {
       const aptLabel = t(lang, `apt_${d.aptSubtype || "bilocale"}`).split(" (")[0];
       return `${aptLabel} · ${d.bedrooms || "1"} ${t(lang, "add_bedrooms").toLowerCase()} · ${d.bathrooms || "1"} ${t(lang, "add_bathrooms").toLowerCase()}`;
     }
-    const parts = [t(lang, "subtype_villa"), `${d.bedrooms || "1"} ${t(lang, "add_bedrooms").toLowerCase()}`];
+    const parts = [t(lang, `house_${d.houseKind || "villa"}`), `${d.bedrooms || "1"} ${t(lang, "add_bedrooms").toLowerCase()}`];
     if (d.hasLivingRoom) parts.push(t(lang, "add_living_room").toLowerCase());
     parts.push(`${d.bathrooms || "1"} ${t(lang, "add_bathrooms").toLowerCase()}`);
     return parts.join(" · ");
@@ -154,7 +154,7 @@ function generateDescription(lang, form) {
 const UNLOCK_FEE = 4.99;
 
 
-const MAX_PHOTOS = 4;
+const MAX_PHOTOS = 8;
 
 const PLANS = [
   {
@@ -743,7 +743,7 @@ function AddListingForm({ onSubmit, saving, lang }) {
   const empty = {
     owner: "", phone: "", type: "maison", transaction: "location", country: COUNTRIES[0], city: "",
     address: "", price: "", desc: "", availableFrom: "",
-    subtype: "villa", bedrooms: "1", bathrooms: "1", hasLivingRoom: true,
+    subtype: "villa", bedrooms: "1", bathrooms: "1", hasLivingRoom: true, houseKind: "familiale",
     aptSubtype: "bilocale", showerType: "private", applianceCategory: "electronique",
   };
   const [form, setForm] = useState(empty);
@@ -860,7 +860,7 @@ function AddListingForm({ onSubmit, saving, lang }) {
     if (form.type === "maison") {
       details = form.subtype === "appartement"
         ? { subtype: "appartement", aptSubtype: form.aptSubtype, bedrooms: form.bedrooms, bathrooms: form.bathrooms }
-        : { subtype: "villa", bedrooms: form.bedrooms, hasLivingRoom: form.hasLivingRoom, bathrooms: form.bathrooms };
+        : { subtype: "villa", houseKind: form.houseKind, bedrooms: form.bedrooms, hasLivingRoom: form.hasLivingRoom, bathrooms: form.bathrooms };
     } else if (form.type === "chambre") {
       details = { showerType: form.showerType };
     } else if (form.type === "appareils") {
@@ -934,7 +934,12 @@ function AddListingForm({ onSubmit, saving, lang }) {
         <div>
           <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_type")}</label>
           <Select value={form.type} onChange={(e) => set("type", e.target.value)}>
-            {Object.keys(TYPES).map((k) => <option key={k} value={k}>{t(lang, `type_${k}`)}</option>)}
+            <optgroup label={t(lang, "type_group_immobilier")}>
+                  <option value="maison">{t(lang, "type_maison")}</option>
+                  <option value="chambre">{t(lang, "type_chambre")}</option>
+                </optgroup>
+                <option value="voiture">{t(lang, "type_voiture")}</option>
+                <option value="appareils">{t(lang, "type_appareils")}</option>
           </Select>
         </div>
 
@@ -994,6 +999,18 @@ function AddListingForm({ onSubmit, saving, lang }) {
                   <option value="bilocale">{t(lang, "apt_bilocale")}</option>
                   <option value="trilocale">{t(lang, "apt_trilocale")}</option>
                   <option value="quadrilocale">{t(lang, "apt_quadrilocale")}</option>
+                </Select>
+              </div>
+            )}
+
+            {form.subtype === "villa" && (
+              <div className="mt-2.5">
+                <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_house_kind")}</label>
+                <Select value={form.houseKind} onChange={(e) => set("houseKind", e.target.value)}>
+                  <option value="familiale">{t(lang, "house_familiale")}</option>
+                  <option value="vacances">{t(lang, "house_vacances")}</option>
+                  <option value="villa">{t(lang, "house_villa")}</option>
+                  <option value="autre">{t(lang, "house_autre")}</option>
                 </Select>
               </div>
             )}
@@ -1089,7 +1106,7 @@ function AddListingForm({ onSubmit, saving, lang }) {
             {photos.map((p, i) => (
               <div key={i} className="relative h-16 w-16">
                 <img src={p} alt="" className="h-16 w-16 rounded-lg object-cover" style={{ border: `1px solid ${C.line}` }} />
-                <button onClick={() => removePhoto(i)} className="clesch-focus absolute -right-1.5 -top-1.5 rounded-full p-0.5" style={{ background: C.rust }}>
+                <button onClick={() => removePhoto(i)} className="clesch-focus absolute right-1 top-1 rounded-full p-0.5" style={{ background: C.rust }}>
                   <Trash2 size={11} color="white" />
                 </button>
               </div>
@@ -1446,7 +1463,7 @@ function CookieBanner({ lang, onOpenPrivacy }) {
 
 const HERO_IMAGES = ["/hero-bg.png", "/hero-bg-2.png", "/hero-bg-3.png", "/hero-bg-4.png", "/hero-bg-5.png", "/hero-bg-6.png"];
 
-function HowItWorks({ goTo, lang, journalPosts, onOpenPost }) {
+function HowItWorks({ goTo, lang, journalPosts, onOpenPost, partners }) {
   const [heroIndex, setHeroIndex] = useState(0);
 
   useEffect(() => {
@@ -1541,6 +1558,27 @@ function HowItWorks({ goTo, lang, journalPosts, onOpenPost }) {
                 <p className="mt-1 text-sm font-semibold" style={{ color: C.ink }}>{p.title}</p>
                 {p.excerpt && <p className="mt-1 text-xs" style={{ color: C.slate }}>{p.excerpt}</p>}
               </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {partners && partners.length > 0 && (
+        <div className="mt-10">
+          <h2 className="text-xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "partners_title")}</h2>
+          <div className="mt-3 flex flex-wrap items-center gap-4">
+            {partners.map((p) => (
+              <a key={p.id} href={p.link || undefined} target={p.link ? "_blank" : undefined} rel="noopener noreferrer"
+                className="clesch-focus flex items-center gap-2 rounded-xl p-3" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+                {p.logo ? (
+                  <img src={p.logo} alt={p.name} className="h-8 w-8 rounded-lg object-cover" />
+                ) : (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: C.paper }}>
+                    <Building2 size={16} style={{ color: C.slate }} />
+                  </div>
+                )}
+                <span className="text-sm font-medium" style={{ color: C.ink }}>{p.name}</span>
+              </a>
             ))}
           </div>
         </div>
@@ -1817,6 +1855,52 @@ function AdminPanel({ lang }) {
   const [messages, setMessages] = useState([]);
   const [messagesLoading, setMessagesLoading] = useState(true);
 
+  const [partners, setPartners] = useState([]);
+  const [partnersLoading, setPartnersLoading] = useState(true);
+  const [partnerName, setPartnerName] = useState("");
+  const [partnerLink, setPartnerLink] = useState("");
+  const [partnerLogo, setPartnerLogo] = useState(null);
+  const [partnerLogoBusy, setPartnerLogoBusy] = useState(false);
+  const [partnerSaving, setPartnerSaving] = useState(false);
+  const [partnerError, setPartnerError] = useState("");
+
+  const loadPartners = useCallback(async () => {
+    setPartnersLoading(true);
+    const { data } = await supabase.from("partners").select("*").order("created_at", { ascending: false });
+    setPartners(data || []);
+    setPartnersLoading(false);
+  }, []);
+
+  async function handlePartnerLogoFile(fileList) {
+    const file = fileList?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    setPartnerLogoBusy(true);
+    try {
+      setPartnerLogo(await resizeImageFile(file, 240, 0.8));
+    } finally {
+      setPartnerLogoBusy(false);
+    }
+  }
+
+  async function addPartner() {
+    if (!partnerName.trim()) { setPartnerError(t(lang, "admin_partner_err_name")); return; }
+    setPartnerSaving(true);
+    setPartnerError("");
+    const { error } = await supabase.from("partners").insert({
+      name: partnerName.trim(), link: partnerLink.trim() || null, logo: partnerLogo || null,
+    });
+    setPartnerSaving(false);
+    if (error) { setPartnerError(error.message); return; }
+    setPartnerName(""); setPartnerLink(""); setPartnerLogo(null);
+    loadPartners();
+  }
+
+  async function deletePartner(id) {
+    if (!window.confirm(t(lang, "admin_partner_delete_confirm"))) return;
+    await supabase.from("partners").delete().eq("id", id);
+    loadPartners();
+  }
+
   const [posts, setPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(true);
   const [editingPostId, setEditingPostId] = useState(null); // null = new post
@@ -2006,7 +2090,7 @@ function AdminPanel({ lang }) {
     loadListingsAdmin();
   }
 
-  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); loadAnalytics(); loadAccounts(); loadReports(); loadRevenue(); loadNewsletterCount(); loadPosts(); }, [load, loadMessages, loadListingsAdmin, loadAnalytics, loadAccounts, loadReports, loadRevenue, loadNewsletterCount, loadPosts]);
+  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); loadAnalytics(); loadAccounts(); loadReports(); loadRevenue(); loadNewsletterCount(); loadPosts(); loadPartners(); }, [load, loadMessages, loadListingsAdmin, loadAnalytics, loadAccounts, loadReports, loadRevenue, loadNewsletterCount, loadPosts, loadPartners]);
 
   async function viewDocument(row) {
     if (!row.id_document_path) return;
@@ -2178,6 +2262,52 @@ function AdminPanel({ lang }) {
                   <Trash2 size={12} /> {t(lang, "dash_delete")}
                 </button>
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className="mt-10 font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "admin_moderation")}</p>
+      <h1 className="mt-1 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_partners_title")}</h1>
+
+      <div className="mt-4 rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+        <p className="text-sm font-semibold" style={{ color: C.ink }}>{t(lang, "admin_partner_new")}</p>
+        <input value={partnerName} onChange={(e) => setPartnerName(e.target.value)} placeholder={t(lang, "admin_partner_name_ph")}
+          className="clesch-focus mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+        <input value={partnerLink} onChange={(e) => setPartnerLink(e.target.value)} placeholder={t(lang, "admin_partner_link_ph")}
+          className="clesch-focus mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+        <div className="mt-2 flex items-center gap-3">
+          {partnerLogo && <img src={partnerLogo} alt="" className="h-12 w-12 rounded-lg object-cover" style={{ border: `1px solid ${C.line}` }} />}
+          <label className="clesch-focus flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium" style={{ borderColor: C.line, color: C.ink }}>
+            {partnerLogoBusy ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={14} />} {t(lang, "admin_partner_logo")}
+            <input type="file" accept="image/*" hidden onChange={(e) => { handlePartnerLogoFile(e.target.files); e.target.value = ""; }} />
+          </label>
+        </div>
+        {partnerError && <p className="mt-1 text-xs" style={{ color: C.rust }}>{partnerError}</p>}
+        <button disabled={partnerSaving} onClick={addPartner}
+          className="clesch-focus mt-2 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" style={{ background: C.ink }}>
+          {partnerSaving ? <Loader2 size={15} className="animate-spin" /> : t(lang, "admin_partner_add")}
+        </button>
+      </div>
+
+      {partnersLoading ? (
+        <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> {t(lang, "admin_loading")}</div>
+      ) : partners.length === 0 ? (
+        <div className="mt-4 rounded-xl border p-6 text-center text-sm" style={{ borderColor: C.line, color: C.slate }}>{t(lang, "admin_partner_empty")}</div>
+      ) : (
+        <div className="mt-4 space-y-2">
+          {partners.map((p) => (
+            <div key={p.id} className="flex items-center justify-between gap-2 rounded-xl p-3" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+              <div className="flex items-center gap-2.5">
+                {p.logo ? <img src={p.logo} alt="" className="h-9 w-9 rounded-lg object-cover" style={{ border: `1px solid ${C.line}` }} /> : <div className="h-9 w-9 rounded-lg" style={{ background: C.paper }} />}
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: C.ink }}>{p.name}</p>
+                  {p.link && <p className="text-xs" style={{ color: C.slate }}>{p.link}</p>}
+                </div>
+              </div>
+              <button onClick={() => deletePartner(p.id)} className="clesch-focus flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-white" style={{ background: C.rust }}>
+                <Trash2 size={12} /> {t(lang, "dash_delete")}
+              </button>
             </div>
           ))}
         </div>
@@ -2470,7 +2600,7 @@ function EditListingModal({ listing, onClose, onSaved, lang }) {
     type: listing.type, transaction: listing.transaction, country: listing.country,
     city: listing.city, address: listing.address || "", price: listing.price,
     desc: listing.description, availableFrom: listing.available_from || "",
-    subtype: d.subtype || "villa", aptSubtype: d.aptSubtype || "bilocale",
+    subtype: d.subtype || "villa", aptSubtype: d.aptSubtype || "bilocale", houseKind: d.houseKind || "familiale",
     bedrooms: d.bedrooms || "1", bathrooms: d.bathrooms || "1", hasLivingRoom: d.hasLivingRoom ?? true,
     showerType: d.showerType || "private", applianceCategory: d.applianceCategory || "electronique",
   });
@@ -2508,7 +2638,7 @@ function EditListingModal({ listing, onClose, onSaved, lang }) {
       if (form.type === "maison") {
         details = form.subtype === "appartement"
           ? { subtype: "appartement", aptSubtype: form.aptSubtype, bedrooms: form.bedrooms, bathrooms: form.bathrooms }
-          : { subtype: "villa", bedrooms: form.bedrooms, hasLivingRoom: form.hasLivingRoom, bathrooms: form.bathrooms };
+          : { subtype: "villa", houseKind: form.houseKind, bedrooms: form.bedrooms, hasLivingRoom: form.hasLivingRoom, bathrooms: form.bathrooms };
       } else if (form.type === "chambre") {
         details = { showerType: form.showerType };
       } else if (form.type === "appareils") {
@@ -2551,7 +2681,12 @@ function EditListingModal({ listing, onClose, onSaved, lang }) {
           <div>
             <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_type")}</label>
             <Select value={form.type} onChange={(e) => set("type", e.target.value)}>
-              {Object.keys(TYPES).map((k) => <option key={k} value={k}>{t(lang, `type_${k}`)}</option>)}
+              <optgroup label={t(lang, "type_group_immobilier")}>
+                  <option value="maison">{t(lang, "type_maison")}</option>
+                  <option value="chambre">{t(lang, "type_chambre")}</option>
+                </optgroup>
+                <option value="voiture">{t(lang, "type_voiture")}</option>
+                <option value="appareils">{t(lang, "type_appareils")}</option>
             </Select>
           </div>
           <div>
@@ -2597,6 +2732,14 @@ function EditListingModal({ listing, onClose, onSaved, lang }) {
                   <option value="bilocale">{t(lang, "apt_bilocale")}</option>
                   <option value="trilocale">{t(lang, "apt_trilocale")}</option>
                   <option value="quadrilocale">{t(lang, "apt_quadrilocale")}</option>
+                </Select>
+              )}
+              {form.subtype === "villa" && (
+                <Select value={form.houseKind} onChange={(e) => set("houseKind", e.target.value)}>
+                  <option value="familiale">{t(lang, "house_familiale")}</option>
+                  <option value="vacances">{t(lang, "house_vacances")}</option>
+                  <option value="villa">{t(lang, "house_villa")}</option>
+                  <option value="autre">{t(lang, "house_autre")}</option>
                 </Select>
               )}
               <div className="mt-2.5 grid grid-cols-2 gap-2.5">
@@ -2655,7 +2798,7 @@ function EditListingModal({ listing, onClose, onSaved, lang }) {
               {photos.map((p, i) => (
                 <div key={i} className="relative h-16 w-16">
                   <img src={p} alt="" className="h-16 w-16 rounded-lg object-cover" style={{ border: `1px solid ${C.line}` }} />
-                  <button onClick={() => removePhoto(i)} className="clesch-focus absolute -right-1.5 -top-1.5 rounded-full p-0.5" style={{ background: C.rust }}>
+                  <button onClick={() => removePhoto(i)} className="clesch-focus absolute right-1 top-1 rounded-full p-0.5" style={{ background: C.rust }}>
                     <Trash2 size={11} color="white" />
                   </button>
                 </div>
@@ -3049,6 +3192,13 @@ export default function CleSchengen() {
   }, []);
   useEffect(() => { loadJournalPosts(); }, [loadJournalPosts]);
 
+  const [publicPartners, setPublicPartners] = useState([]);
+  const loadPublicPartners = useCallback(async () => {
+    const { data } = await supabase.from("partners").select("*").order("created_at", { ascending: false });
+    setPublicPartners(data || []);
+  }, []);
+  useEffect(() => { loadPublicPartners(); }, [loadPublicPartners]);
+
   const loadListings = useCallback(async () => {
     setDbLoading(true);
     setDbError(false);
@@ -3400,6 +3550,7 @@ export default function CleSchengen() {
             lang={lang}
             journalPosts={journalPosts}
             onOpenPost={(p) => { setActiveJournalPost(p); setTab("journal"); }}
+            partners={publicPartners}
           />
         )}
 
@@ -3420,7 +3571,12 @@ export default function CleSchengen() {
               </div>
               <Select value={fType} onChange={(e) => setFType(e.target.value)}>
                 <option value="all">{t(lang, "filter_all_type")}</option>
-                {Object.keys(TYPES).map((k) => <option key={k} value={k}>{t(lang, `type_${k}`)}</option>)}
+                <optgroup label={t(lang, "type_group_immobilier")}>
+                  <option value="maison">{t(lang, "type_maison")}</option>
+                  <option value="chambre">{t(lang, "type_chambre")}</option>
+                </optgroup>
+                <option value="voiture">{t(lang, "type_voiture")}</option>
+                <option value="appareils">{t(lang, "type_appareils")}</option>
               </Select>
               <Select value={fTrans} onChange={(e) => setFTrans(e.target.value)}>
                 <option value="all">{t(lang, "filter_all_trans")}</option>

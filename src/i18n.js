@@ -14,6 +14,7 @@ const fr = {
   login: "Se connecter", logout: "Déconnexion", language_label: "Langue",
 
   type_maison: "Maison", type_chambre: "Chambre", type_voiture: "Voiture", type_appareils: "Appareils",
+  type_group_immobilier: "Immobilier",
   trans_location: "Location", trans_vente: "Vente",
 
   browse_title: "Parcourir les annonces",
@@ -49,6 +50,12 @@ const fr = {
 
   nav_journal: "Journal", journal_title: "Journal", journal_subtitle: "Actualités, conseils et nouveautés de CléSchengen.",
   journal_empty: "Aucun article pour l'instant.", journal_back: "Retour au journal", journal_see_all: "Voir tous les articles",
+
+  partners_title: "Partenariat",
+  admin_partners_title: "Partenaires", admin_partner_new: "Ajouter un partenaire",
+  admin_partner_name_ph: "Nom du partenaire", admin_partner_link_ph: "Lien (https://...)",
+  admin_partner_logo: "Logo", admin_partner_add: "Ajouter", admin_partner_err_name: "Le nom est obligatoire.",
+  admin_partner_delete_confirm: "Supprimer définitivement ce partenaire ?", admin_partner_empty: "Aucun partenaire pour l'instant.",
 
   admin_journal_title: "Journal (articles)", admin_journal_new: "Nouvel article", admin_journal_edit: "Modifier l'article",
   admin_journal_title_ph: "Titre de l'article", admin_journal_excerpt_ph: "Court résumé (facultatif, affiché dans les listes)",
@@ -87,6 +94,8 @@ const fr = {
   add_address_note: "L'adresse exacte n'est révélée qu'après déblocage du contact. Une position approximative est utilisée sur la carte.",
   add_err_address: "Indique l'adresse du bien.",
   add_house_subtype: "Type de logement", subtype_villa: "Maison / Villa", subtype_appartement: "Appartement",
+  add_house_kind: "Type de maison",
+  house_familiale: "Maison familiale", house_vacances: "Maison de vacances", house_villa: "Villa", house_autre: "Autre",
   add_apt_subtype: "Type d'appartement",
   apt_monolocale: "Monolocale (studio)", apt_bilocale: "Bilocale (1 chambre)",
   apt_trilocale: "Trilocale (2 chambres)", apt_quadrilocale: "Quadrilocale + (3 chambres et plus)",
@@ -268,6 +277,7 @@ const en = {
   login: "Log in", logout: "Log out", language_label: "Language",
 
   type_maison: "House", type_chambre: "Room", type_voiture: "Car", type_appareils: "Appliances",
+  type_group_immobilier: "Real estate",
   trans_location: "Rent", trans_vente: "Sale",
 
   browse_title: "Browse listings",
@@ -303,6 +313,12 @@ const en = {
 
   nav_journal: "Journal", journal_title: "Journal", journal_subtitle: "News, tips, and updates from CléSchengen.",
   journal_empty: "No articles yet.", journal_back: "Back to journal", journal_see_all: "See all articles",
+
+  partners_title: "Partnerships",
+  admin_partners_title: "Partners", admin_partner_new: "Add a partner",
+  admin_partner_name_ph: "Partner name", admin_partner_link_ph: "Link (https://...)",
+  admin_partner_logo: "Logo", admin_partner_add: "Add", admin_partner_err_name: "Name is required.",
+  admin_partner_delete_confirm: "Permanently delete this partner?", admin_partner_empty: "No partners yet.",
 
   admin_journal_title: "Journal (articles)", admin_journal_new: "New article", admin_journal_edit: "Edit article",
   admin_journal_title_ph: "Article title", admin_journal_excerpt_ph: "Short excerpt (optional, shown in lists)",
@@ -341,6 +357,8 @@ const en = {
   add_address_note: "The exact address is only revealed once the contact is unlocked. An approximate position is used on the map.",
   add_err_address: "Enter the property's address.",
   add_house_subtype: "Housing type", subtype_villa: "House / Villa", subtype_appartement: "Apartment",
+  add_house_kind: "House type",
+  house_familiale: "Family house", house_vacances: "Vacation home", house_villa: "Villa", house_autre: "Other",
   add_apt_subtype: "Apartment type",
   apt_monolocale: "Studio (monolocale)", apt_bilocale: "1-bedroom (bilocale)",
   apt_trilocale: "2-bedroom (trilocale)", apt_quadrilocale: "3+ bedrooms (quadrilocale)",
