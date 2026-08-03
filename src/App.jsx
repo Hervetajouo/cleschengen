@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Home, BedDouble, Car, MapPin, Lock, Search, Plus, Phone, X,
-  CheckCircle2, HelpCircle, Copy, ArrowRight,
+  CheckCircle2, HelpCircle, Copy, ArrowRight, ArrowLeft,
   ShieldCheck, ChevronDown, KeyRound, ListChecks, Loader2, Info, Building2,
   ImagePlus, Trash2, BadgeCheck, Smartphone, Sparkles, ImageOff, ExternalLink,
   LogOut, UploadCloud, UserCog, ShieldQuestion, Mail, KeySquare, Package, MessageCircleQuestion,
@@ -1192,6 +1192,50 @@ function AddListingForm({ onSubmit, saving, lang }) {
 
 /* ---------- Dedicated onboarding tab ---------- */
 /* ---------- Country guides ---------- */
+/* ---------- Public journal (blog) ---------- */
+function JournalList({ posts, loading, lang, onOpen }) {
+  return (
+    <div>
+      <p className="font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>CléSchengen</p>
+      <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "journal_title")}</h1>
+      <p className="mt-2 max-w-2xl text-sm" style={{ color: C.slate }}>{t(lang, "journal_subtitle")}</p>
+
+      {loading ? (
+        <div className="mt-6 flex items-center gap-2 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> {t(lang, "admin_loading")}</div>
+      ) : posts.length === 0 ? (
+        <div className="mt-6 rounded-xl border p-8 text-center text-sm" style={{ borderColor: C.line, color: C.slate }}>{t(lang, "journal_empty")}</div>
+      ) : (
+        <div className="mt-6 space-y-4">
+          {posts.map((p) => (
+            <button key={p.id} onClick={() => onOpen(p)} className="clesch-focus block w-full rounded-xl p-5 text-left transition hover:shadow-md" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+              <p className="text-xs" style={{ color: C.slate, fontFamily: "'IBM Plex Mono', monospace" }}>
+                {new Date(p.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR")}
+              </p>
+              <p className="mt-1 text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{p.title}</p>
+              {p.excerpt && <p className="mt-1 text-sm" style={{ color: C.slate }}>{p.excerpt}</p>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function JournalPostView({ post, lang, onBack }) {
+  return (
+    <div className="mx-auto max-w-2xl">
+      <button onClick={onBack} className="clesch-focus flex items-center gap-1.5 text-sm font-medium" style={{ color: C.slate }}>
+        <ArrowLeft size={15} /> {t(lang, "journal_back")}
+      </button>
+      <p className="mt-4 text-xs" style={{ color: C.slate, fontFamily: "'IBM Plex Mono', monospace" }}>
+        {new Date(post.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR")}
+      </p>
+      <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{post.title}</h1>
+      <div className="mt-4 whitespace-pre-line text-sm leading-relaxed" style={{ color: C.ink }}>{post.content}</div>
+    </div>
+  );
+}
+
 function CountryGuides({ lang }) {
   const [selected, setSelected] = useState(COUNTRIES[0]);
   const guide = COUNTRY_GUIDES[selected]?.[lang] || COUNTRY_GUIDES[selected]?.fr;
@@ -1402,7 +1446,7 @@ function CookieBanner({ lang, onOpenPrivacy }) {
 
 const HERO_IMAGES = ["/hero-bg.png", "/hero-bg-2.png", "/hero-bg-3.png", "/hero-bg-4.png", "/hero-bg-5.png", "/hero-bg-6.png"];
 
-function HowItWorks({ goTo, lang }) {
+function HowItWorks({ goTo, lang, journalPosts, onOpenPost }) {
   const [heroIndex, setHeroIndex] = useState(0);
 
   useEffect(() => {
@@ -1479,6 +1523,28 @@ function HowItWorks({ goTo, lang }) {
           </div>
         ))}
       </div>
+
+      {journalPosts && journalPosts.length > 0 && (
+        <div className="mt-10">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "journal_title")}</h2>
+            <button onClick={() => goTo("journal")} className="clesch-focus text-sm font-medium underline" style={{ color: C.slate }}>
+              {t(lang, "journal_see_all")}
+            </button>
+          </div>
+          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            {journalPosts.slice(0, 3).map((p) => (
+              <button key={p.id} onClick={() => onOpenPost(p)} className="clesch-focus block rounded-xl p-4 text-left transition hover:shadow-md" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+                <p className="text-xs" style={{ color: C.slate, fontFamily: "'IBM Plex Mono', monospace" }}>
+                  {new Date(p.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR")}
+                </p>
+                <p className="mt-1 text-sm font-semibold" style={{ color: C.ink }}>{p.title}</p>
+                {p.excerpt && <p className="mt-1 text-xs" style={{ color: C.slate }}>{p.excerpt}</p>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1751,6 +1817,81 @@ function AdminPanel({ lang }) {
   const [messages, setMessages] = useState([]);
   const [messagesLoading, setMessagesLoading] = useState(true);
 
+  const [posts, setPosts] = useState([]);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [editingPostId, setEditingPostId] = useState(null); // null = new post
+  const [postTitle, setPostTitle] = useState("");
+  const [postExcerpt, setPostExcerpt] = useState("");
+  const [postContent, setPostContent] = useState("");
+  const [postSaving, setPostSaving] = useState(false);
+  const [postError, setPostError] = useState("");
+
+  const loadPosts = useCallback(async () => {
+    setPostsLoading(true);
+    const { data } = await supabase.from("journal_posts").select("*").order("created_at", { ascending: false });
+    setPosts(data || []);
+    setPostsLoading(false);
+  }, []);
+
+  function slugify(s) {
+    return s.toLowerCase().trim()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  }
+
+  function resetPostForm() {
+    setEditingPostId(null);
+    setPostTitle("");
+    setPostExcerpt("");
+    setPostContent("");
+    setPostError("");
+  }
+
+  function editPost(p) {
+    setEditingPostId(p.id);
+    setPostTitle(p.title);
+    setPostExcerpt(p.excerpt || "");
+    setPostContent(p.content);
+    setPostError("");
+  }
+
+  async function savePost() {
+    if (!postTitle.trim() || !postContent.trim()) {
+      setPostError(t(lang, "admin_journal_err_required"));
+      return;
+    }
+    setPostSaving(true);
+    setPostError("");
+    if (editingPostId) {
+      const { error } = await supabase.from("journal_posts").update({
+        title: postTitle.trim(), excerpt: postExcerpt.trim() || null, content: postContent.trim(),
+        updated_at: new Date().toISOString(),
+      }).eq("id", editingPostId);
+      if (error) { setPostError(error.message); setPostSaving(false); return; }
+    } else {
+      const slug = `${slugify(postTitle)}-${Date.now().toString(36).slice(-5)}`;
+      const { error } = await supabase.from("journal_posts").insert({
+        slug, title: postTitle.trim(), excerpt: postExcerpt.trim() || null, content: postContent.trim(),
+      });
+      if (error) { setPostError(error.message); setPostSaving(false); return; }
+    }
+    setPostSaving(false);
+    resetPostForm();
+    loadPosts();
+  }
+
+  async function deletePost(id) {
+    if (!window.confirm(t(lang, "admin_journal_delete_confirm"))) return;
+    await supabase.from("journal_posts").delete().eq("id", id);
+    if (editingPostId === id) resetPostForm();
+    loadPosts();
+  }
+
+  async function togglePublished(p) {
+    await supabase.from("journal_posts").update({ published: !p.published }).eq("id", p.id);
+    loadPosts();
+  }
+
   const load = useCallback(async () => {
     setLoading(true);
     const { data } = await supabase
@@ -1865,7 +2006,7 @@ function AdminPanel({ lang }) {
     loadListingsAdmin();
   }
 
-  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); loadAnalytics(); loadAccounts(); loadReports(); loadRevenue(); loadNewsletterCount(); }, [load, loadMessages, loadListingsAdmin, loadAnalytics, loadAccounts, loadReports, loadRevenue, loadNewsletterCount]);
+  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); loadAnalytics(); loadAccounts(); loadReports(); loadRevenue(); loadNewsletterCount(); loadPosts(); }, [load, loadMessages, loadListingsAdmin, loadAnalytics, loadAccounts, loadReports, loadRevenue, loadNewsletterCount, loadPosts]);
 
   async function viewDocument(row) {
     if (!row.id_document_path) return;
@@ -1984,6 +2125,62 @@ function AdminPanel({ lang }) {
             </div>
           </div>
         </>
+      )}
+
+      <p className="mt-10 font-mono text-xs uppercase tracking-widest" style={{ color: C.rust }}>{t(lang, "admin_moderation")}</p>
+      <h1 className="mt-1 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_journal_title")}</h1>
+
+      <div className="mt-4 rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+        <p className="text-sm font-semibold" style={{ color: C.ink }}>{editingPostId ? t(lang, "admin_journal_edit") : t(lang, "admin_journal_new")}</p>
+        <input value={postTitle} onChange={(e) => setPostTitle(e.target.value)} placeholder={t(lang, "admin_journal_title_ph")}
+          className="clesch-focus mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+        <input value={postExcerpt} onChange={(e) => setPostExcerpt(e.target.value)} placeholder={t(lang, "admin_journal_excerpt_ph")}
+          className="clesch-focus mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+        <textarea value={postContent} onChange={(e) => setPostContent(e.target.value)} rows={6} placeholder={t(lang, "admin_journal_content_ph")}
+          className="clesch-focus mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+        {postError && <p className="mt-1 text-xs" style={{ color: C.rust }}>{postError}</p>}
+        <div className="mt-2 flex gap-2">
+          <button disabled={postSaving} onClick={savePost}
+            className="clesch-focus rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" style={{ background: C.ink }}>
+            {postSaving ? <Loader2 size={15} className="animate-spin" /> : (editingPostId ? t(lang, "admin_journal_update") : t(lang, "admin_journal_publish"))}
+          </button>
+          {editingPostId && (
+            <button onClick={resetPostForm} className="clesch-focus rounded-lg border px-4 py-2 text-sm font-semibold" style={{ borderColor: C.line, color: C.ink }}>
+              {t(lang, "edit_cancel")}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {postsLoading ? (
+        <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> {t(lang, "admin_loading")}</div>
+      ) : posts.length === 0 ? (
+        <div className="mt-4 rounded-xl border p-6 text-center text-sm" style={{ borderColor: C.line, color: C.slate }}>{t(lang, "admin_journal_empty")}</div>
+      ) : (
+        <div className="mt-4 space-y-2">
+          {posts.map((p) => (
+            <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl p-3" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: C.ink }}>{p.title}</p>
+                <p className="text-xs" style={{ color: C.slate }}>
+                  {new Date(p.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR")} ·{" "}
+                  <span style={{ color: p.published ? C.green : C.slate }}>{p.published ? t(lang, "admin_journal_published") : t(lang, "admin_journal_draft")}</span>
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => togglePublished(p)} className="clesch-focus rounded-lg border px-2.5 py-1 text-xs font-medium" style={{ borderColor: C.line, color: C.ink }}>
+                  {p.published ? t(lang, "admin_journal_unpublish") : t(lang, "admin_journal_publish_toggle")}
+                </button>
+                <button onClick={() => editPost(p)} className="clesch-focus rounded-lg border px-2.5 py-1 text-xs font-medium" style={{ borderColor: C.line, color: C.ink }}>
+                  {t(lang, "dash_edit")}
+                </button>
+                <button onClick={() => deletePost(p.id)} className="clesch-focus flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-white" style={{ background: C.rust }}>
+                  <Trash2 size={12} /> {t(lang, "dash_delete")}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       <h1 className="mt-10 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_pending_title")}</h1>
@@ -2841,6 +3038,17 @@ export default function CleSchengen() {
   }
 
   /* ---- Shared listings (real Supabase table, same for every visitor) ---- */
+  const [journalPosts, setJournalPosts] = useState([]);
+  const [journalLoading, setJournalLoading] = useState(true);
+  const [activeJournalPost, setActiveJournalPost] = useState(null);
+  const loadJournalPosts = useCallback(async () => {
+    setJournalLoading(true);
+    const { data } = await supabase.from("journal_posts").select("*").eq("published", true).order("created_at", { ascending: false });
+    setJournalPosts(data || []);
+    setJournalLoading(false);
+  }, []);
+  useEffect(() => { loadJournalPosts(); }, [loadJournalPosts]);
+
   const loadListings = useCallback(async () => {
     setDbLoading(true);
     setDbError(false);
@@ -3084,6 +3292,7 @@ export default function CleSchengen() {
     ["map", t(lang, "nav_map")],
     ["add", t(lang, "nav_post")],
     ["guides", t(lang, "nav_guides")],
+    ["journal", t(lang, "nav_journal")],
     ["premium", t(lang, "nav_premium")],
   ];
 
@@ -3185,7 +3394,14 @@ export default function CleSchengen() {
       </header>
 
       <main className="mx-auto max-w-5xl px-5 py-8">
-        {tab === "how" && <HowItWorks goTo={setTab} lang={lang} />}
+        {tab === "how" && (
+          <HowItWorks
+            goTo={setTab}
+            lang={lang}
+            journalPosts={journalPosts}
+            onOpenPost={(p) => { setActiveJournalPost(p); setTab("journal"); }}
+          />
+        )}
 
         {tab === "browse" && (
           <div>
@@ -3388,6 +3604,14 @@ export default function CleSchengen() {
         )}
 
         {tab === "guides" && <CountryGuides lang={lang} />}
+
+        {tab === "journal" && (
+          activeJournalPost ? (
+            <JournalPostView post={activeJournalPost} lang={lang} onBack={() => setActiveJournalPost(null)} />
+          ) : (
+            <JournalList posts={journalPosts} loading={journalLoading} lang={lang} onOpen={setActiveJournalPost} />
+          )
+        )}
 
         {tab === "terms" && <LegalPage content={TERMS_CONTENT} lang={lang} />}
         {tab === "privacy" && <LegalPage content={PRIVACY_CONTENT} lang={lang} />}

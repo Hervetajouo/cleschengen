@@ -47,6 +47,18 @@ const fr = {
   support_title: "Soutenir CléSchengen", support_subtitle: "Ce site est développé et maintenu sans investisseur ni budget publicitaire. Un don, quel que soit le montant, aide à couvrir les frais d'hébergement et à continuer d'améliorer la plateforme.",
   support_cta: "Faire un don",
 
+  nav_journal: "Journal", journal_title: "Journal", journal_subtitle: "Actualités, conseils et nouveautés de CléSchengen.",
+  journal_empty: "Aucun article pour l'instant.", journal_back: "Retour au journal", journal_see_all: "Voir tous les articles",
+
+  admin_journal_title: "Journal (articles)", admin_journal_new: "Nouvel article", admin_journal_edit: "Modifier l'article",
+  admin_journal_title_ph: "Titre de l'article", admin_journal_excerpt_ph: "Court résumé (facultatif, affiché dans les listes)",
+  admin_journal_content_ph: "Contenu complet de l'article…",
+  admin_journal_publish: "Publier", admin_journal_update: "Enregistrer les modifications",
+  admin_journal_err_required: "Le titre et le contenu sont obligatoires.",
+  admin_journal_delete_confirm: "Supprimer définitivement cet article ?",
+  admin_journal_empty: "Aucun article pour l'instant.", admin_journal_published: "Publié", admin_journal_draft: "Brouillon",
+  admin_journal_unpublish: "Dépublier", admin_journal_publish_toggle: "Publier",
+
   history_title: "Mes contacts débloqués",
   history_subtitle: "Ces contacts restent enregistrés sur ton compte, même si tu reviens plus tard.",
   history_empty: "Tu n'as encore débloqué aucun contact. Va dans « Rechercher » pour trouver une annonce.",
@@ -288,6 +300,18 @@ const en = {
 
   support_title: "Support CléSchengen", support_subtitle: "This site is built and maintained without investors or an advertising budget. A donation, of any amount, helps cover hosting costs and keep improving the platform.",
   support_cta: "Make a donation",
+
+  nav_journal: "Journal", journal_title: "Journal", journal_subtitle: "News, tips, and updates from CléSchengen.",
+  journal_empty: "No articles yet.", journal_back: "Back to journal", journal_see_all: "See all articles",
+
+  admin_journal_title: "Journal (articles)", admin_journal_new: "New article", admin_journal_edit: "Edit article",
+  admin_journal_title_ph: "Article title", admin_journal_excerpt_ph: "Short excerpt (optional, shown in lists)",
+  admin_journal_content_ph: "Full article content…",
+  admin_journal_publish: "Publish", admin_journal_update: "Save changes",
+  admin_journal_err_required: "Title and content are required.",
+  admin_journal_delete_confirm: "Permanently delete this article?",
+  admin_journal_empty: "No articles yet.", admin_journal_published: "Published", admin_journal_draft: "Draft",
+  admin_journal_unpublish: "Unpublish", admin_journal_publish_toggle: "Publish",
 
   history_title: "My unlocked contacts",
   history_subtitle: "These contacts stay saved to your account, even if you come back later.",
