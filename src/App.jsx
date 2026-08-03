@@ -3790,19 +3790,21 @@ export default function CleSchengen() {
         {tab === "admin" && isAdmin && <AdminPanel lang={lang} />}
       </main>
 
-      <div className="mx-auto mt-4 grid max-w-5xl gap-4 px-5 sm:grid-cols-2">
-        <NewsletterSignup lang={lang} />
-        <div className="rounded-xl p-5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
-          <p className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: C.ink }}>
-            <Heart size={15} style={{ color: C.rust }} /> {t(lang, "support_title")}
-          </p>
-          <p className="mt-1 text-xs" style={{ color: C.slate }}>{t(lang, "support_subtitle")}</p>
-          <a href={DONATION_URL} target="_blank" rel="noopener noreferrer"
-            className="clesch-focus donate-pulse mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: C.rust }}>
-            {t(lang, "support_cta")} <ExternalLink size={14} />
-          </a>
+      {(tab === "how" || tab === "premium") && (
+        <div className="mx-auto mt-4 grid max-w-5xl gap-4 px-5 sm:grid-cols-2">
+          <NewsletterSignup lang={lang} />
+          <div className="rounded-xl p-5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+            <p className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: C.ink }}>
+              <Heart size={15} style={{ color: C.rust }} /> {t(lang, "support_title")}
+            </p>
+            <p className="mt-1 text-xs" style={{ color: C.slate }}>{t(lang, "support_subtitle")}</p>
+            <a href={DONATION_URL} target="_blank" rel="noopener noreferrer"
+              className="clesch-focus donate-pulse mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: C.rust }}>
+              {t(lang, "support_cta")} <ExternalLink size={14} />
+            </a>
+          </div>
         </div>
-      </div>
+      )}
 
       <footer className="mx-auto max-w-5xl px-5 pb-10 pt-4 text-xs" style={{ color: C.slate }}>
         <p>{t(lang, "footer_tagline")}</p>

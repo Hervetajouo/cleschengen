@@ -9,7 +9,7 @@ export const LANGS = [
 ];
 
 const fr = {
-  nav_how: "Comment ça marche", nav_browse: "Rechercher", nav_post: "Poster", nav_premium: "Abonnement",
+  nav_how: "Accueil", nav_browse: "Rechercher", nav_post: "Poster", nav_premium: "Abonnement",
   nav_contacts: "Mes contacts", nav_contact_us: "Contactez-nous", nav_admin: "Admin",
   login: "Se connecter", logout: "Déconnexion", language_label: "Langue",
 
@@ -263,7 +263,7 @@ const fr = {
 };
 
 const en = {
-  nav_how: "How it works", nav_browse: "Search", nav_post: "Post", nav_premium: "Subscription",
+  nav_how: "Home", nav_browse: "Search", nav_post: "Post", nav_premium: "Subscription",
   nav_contacts: "My contacts", nav_contact_us: "Contact us", nav_admin: "Admin",
   login: "Log in", logout: "Log out", language_label: "Language",
 
