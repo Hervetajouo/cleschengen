@@ -40,6 +40,13 @@ const fr = {
   footer_terms: "Conditions d'utilisation", footer_privacy: "Confidentialité",
   footer_rights: "Tous droits réservés.",
 
+  newsletter_title: "Newsletter", newsletter_subtitle: "Reçois les nouveautés de CléSchengen par e-mail, de temps en temps.",
+  newsletter_placeholder: "ton@e-mail.com", newsletter_subscribe: "S'inscrire",
+  newsletter_done: "Inscription confirmée, merci !", newsletter_error: "Échec de l'inscription, réessaie.",
+
+  support_title: "Soutenir CléSchengen", support_subtitle: "Ce site est développé et maintenu sans investisseur ni budget publicitaire. Un don, quel que soit le montant, aide à couvrir les frais d'hébergement et à continuer d'améliorer la plateforme.",
+  support_cta: "Faire un don",
+
   history_title: "Mes contacts débloqués",
   history_subtitle: "Ces contacts restent enregistrés sur ton compte, même si tu reviens plus tard.",
   history_empty: "Tu n'as encore débloqué aucun contact. Va dans « Rechercher » pour trouver une annonce.",
@@ -102,6 +109,7 @@ const fr = {
   admin_revenue_title: "Estimation des revenus", admin_revenue_note: "Estimation basée sur le tarif fixe actuel — le tableau de bord Stripe reste la source exacte (remboursements, échecs de paiement, etc. n'apparaissent pas ici).",
   admin_revenue_unlocks: "Déblocages de contact (total)", admin_revenue_subs: "Abonnements actifs",
   admin_revenue_subs_note: "Voir Stripe pour le détail des montants par formule.",
+  admin_newsletter_count: "Abonnés newsletter",
   add_gate_phone_error: "Vérifie ton numéro de téléphone avant de publier.",
   add_gate_captcha_error: "Le code anti-robot saisi est incorrect.",
 
@@ -274,6 +282,13 @@ const en = {
   footer_terms: "Terms of Service", footer_privacy: "Privacy",
   footer_rights: "All rights reserved.",
 
+  newsletter_title: "Newsletter", newsletter_subtitle: "Get occasional news from CléSchengen by e-mail.",
+  newsletter_placeholder: "your@email.com", newsletter_subscribe: "Subscribe",
+  newsletter_done: "Subscription confirmed, thanks!", newsletter_error: "Failed to subscribe, try again.",
+
+  support_title: "Support CléSchengen", support_subtitle: "This site is built and maintained without investors or an advertising budget. A donation, of any amount, helps cover hosting costs and keep improving the platform.",
+  support_cta: "Make a donation",
+
   history_title: "My unlocked contacts",
   history_subtitle: "These contacts stay saved to your account, even if you come back later.",
   history_empty: "You haven't unlocked any contact yet. Go to \u201cSearch\u201d to find a listing.",
@@ -336,6 +351,7 @@ const en = {
   admin_revenue_title: "Revenue estimate", admin_revenue_note: "Estimate based on the current fixed rate — the Stripe dashboard remains the exact source (refunds, failed payments, etc. are not reflected here).",
   admin_revenue_unlocks: "Contact unlocks (total)", admin_revenue_subs: "Active subscriptions",
   admin_revenue_subs_note: "See Stripe for the breakdown by plan.",
+  admin_newsletter_count: "Newsletter subscribers",
   add_gate_phone_error: "Verify your phone number before publishing.",
   add_gate_captcha_error: "The anti-robot code you entered is incorrect.",
 

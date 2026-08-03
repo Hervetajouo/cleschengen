@@ -169,6 +169,11 @@ const PLANS = [
   },
 ];
 
+// ⚠️ À remplacer : créez un Payment Link Stripe avec "Le client choisit le
+// montant" activé (Product catalog → Create product → Payment Link →
+// "Customer chooses price"), puis collez son URL ici.
+const DONATION_URL = "https://buy.stripe.com/REMPLACE_MOI";
+
 /* Reads an image file, downsizes it, and returns a compact JPEG data URL.
    Keeps listing photos small enough to store as plain text in the shared database. */
 function resizeImageFile(file, maxDim = 640, quality = 0.72) {
@@ -1312,6 +1317,50 @@ function LegalPage({ content, lang }) {
 }
 
 /* ---------- Cookie consent banner ---------- */
+/* ---------- Newsletter signup (footer) ---------- */
+function NewsletterSignup({ lang }) {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | saving | done | error
+
+  async function subscribe(e) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setStatus("saving");
+    const { error } = await supabase.from("newsletter_subscribers").insert({ email: email.trim() });
+    if (error) {
+      setStatus(/duplicate key/i.test(error.message) ? "done" : "error");
+    } else {
+      setStatus("done");
+      supabase.functions.invoke("notify-newsletter-signup", { body: { email: email.trim(), lang } }).then(null, () => {});
+    }
+  }
+
+  return (
+    <div className="rounded-xl p-5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+      <p className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: C.ink }}>
+        <Mail size={15} /> {t(lang, "newsletter_title")}
+      </p>
+      <p className="mt-1 text-xs" style={{ color: C.slate }}>{t(lang, "newsletter_subtitle")}</p>
+      {status === "done" ? (
+        <p className="mt-3 flex items-center gap-1.5 text-sm" style={{ color: C.green }}>
+          <CheckCircle2 size={14} /> {t(lang, "newsletter_done")}
+        </p>
+      ) : (
+        <form onSubmit={subscribe} className="mt-3 flex flex-wrap gap-2">
+          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+            placeholder={t(lang, "newsletter_placeholder")}
+            className="clesch-focus flex-1 rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line, minWidth: "180px" }} />
+          <button type="submit" disabled={status === "saving"}
+            className="clesch-focus rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" style={{ background: C.ink }}>
+            {status === "saving" ? <Loader2 size={15} className="animate-spin" /> : t(lang, "newsletter_subscribe")}
+          </button>
+        </form>
+      )}
+      {status === "error" && <p className="mt-2 text-xs" style={{ color: C.rust }}>{t(lang, "newsletter_error")}</p>}
+    </div>
+  );
+}
+
 function CookieBanner({ lang, onOpenPrivacy }) {
   const [visible, setVisible] = useState(false);
 
@@ -1715,6 +1764,12 @@ function AdminPanel({ lang }) {
     setMessagesLoading(false);
   }, []);
 
+  const [newsletterCount, setNewsletterCount] = useState(0);
+  const loadNewsletterCount = useCallback(async () => {
+    const { count } = await supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true });
+    setNewsletterCount(count || 0);
+  }, []);
+
   const [reports, setReports] = useState([]);
   const [reportsLoading, setReportsLoading] = useState(true);
 
@@ -1802,7 +1857,7 @@ function AdminPanel({ lang }) {
     loadListingsAdmin();
   }
 
-  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); loadAnalytics(); loadAccounts(); loadReports(); loadRevenue(); }, [load, loadMessages, loadListingsAdmin, loadAnalytics, loadAccounts, loadReports, loadRevenue]);
+  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); loadAnalytics(); loadAccounts(); loadReports(); loadRevenue(); loadNewsletterCount(); }, [load, loadMessages, loadListingsAdmin, loadAnalytics, loadAccounts, loadReports, loadRevenue, loadNewsletterCount]);
 
   async function viewDocument(row) {
     if (!row.id_document_path) return;
@@ -1831,7 +1886,7 @@ function AdminPanel({ lang }) {
       <p className="mt-1 text-xs" style={{ color: C.slate }}>{t(lang, "admin_revenue_note")}</p>
 
       {revenue && (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
             <p className="text-xs" style={{ color: C.slate }}>{t(lang, "admin_revenue_unlocks")}</p>
             <p className="mt-1 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>
@@ -1843,6 +1898,10 @@ function AdminPanel({ lang }) {
             <p className="text-xs" style={{ color: C.slate }}>{t(lang, "admin_revenue_subs")}</p>
             <p className="mt-1 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{revenue.active_subscriptions}</p>
             <p className="mt-0.5 text-xs" style={{ color: C.slate }}>{t(lang, "admin_revenue_subs_note")}</p>
+          </div>
+          <div className="rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+            <p className="text-xs" style={{ color: C.slate }}>{t(lang, "admin_newsletter_count")}</p>
+            <p className="mt-1 text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{newsletterCount}</p>
           </div>
         </div>
       )}
@@ -3498,6 +3557,20 @@ export default function CleSchengen() {
 
         {tab === "admin" && isAdmin && <AdminPanel lang={lang} />}
       </main>
+
+      <div className="mx-auto mt-4 grid max-w-5xl gap-4 px-5 sm:grid-cols-2">
+        <NewsletterSignup lang={lang} />
+        <div className="rounded-xl p-5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+          <p className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: C.ink }}>
+            <Heart size={15} style={{ color: C.rust }} /> {t(lang, "support_title")}
+          </p>
+          <p className="mt-1 text-xs" style={{ color: C.slate }}>{t(lang, "support_subtitle")}</p>
+          <a href={DONATION_URL} target="_blank" rel="noopener noreferrer"
+            className="clesch-focus mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: C.rust }}>
+            {t(lang, "support_cta")} <ExternalLink size={14} />
+          </a>
+        </div>
+      </div>
 
       <footer className="mx-auto max-w-5xl px-5 pb-10 pt-4 text-xs" style={{ color: C.slate }}>
         <p>{t(lang, "footer_tagline")}</p>
