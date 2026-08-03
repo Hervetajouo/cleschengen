@@ -2856,6 +2856,26 @@ export default function CleSchengen() {
   const [referralCount, setReferralCount] = useState(0);
   const [wasReferred, setWasReferred] = useState(false);
   const [myReferralCode, setMyReferralCode] = useState(null);
+  const [referralCopied, setReferralCopied] = useState(false);
+  const [referralShared, setReferralShared] = useState(false);
+
+  function copyReferralCode() {
+    navigator.clipboard?.writeText(myReferralCode).then(null, () => {});
+    setReferralCopied(true);
+    setTimeout(() => setReferralCopied(false), 1800);
+  }
+
+  function shareReferralCode() {
+    const text = t(lang, "referral_share_text").replace("{code}", myReferralCode);
+    const url = window.location.origin;
+    if (navigator.share) {
+      navigator.share({ title: "CléSchengen", text, url }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(`${text} ${url}`).then(null, () => {});
+      setReferralShared(true);
+      setTimeout(() => setReferralShared(false), 1800);
+    }
+  }
   const [referralCodeLoading, setReferralCodeLoading] = useState(false);
   const loadReferralInfo = useCallback(async (uid) => {
     if (!uid) { setReferralCount(0); setWasReferred(false); setMyReferralCode(null); return; }
@@ -3364,16 +3384,31 @@ export default function CleSchengen() {
                 <p className="text-sm font-semibold" style={{ color: C.ink }}>{t(lang, "referral_title")}</p>
                 <p className="mt-1 text-sm" style={{ color: C.slate }}>{t(lang, "referral_subtitle")}</p>
                 {myReferralCode ? (
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="rounded-lg border px-4 py-2 text-lg font-semibold tracking-wide" style={{ borderColor: C.gold, color: C.gold, fontFamily: "'IBM Plex Mono', monospace" }}>
-                      {myReferralCode}
-                    </span>
-                    <button
-                      onClick={() => { navigator.clipboard?.writeText(myReferralCode).then(null, () => {}); }}
-                      className="clesch-focus rounded-lg px-3 py-2 text-xs font-semibold text-white" style={{ background: C.ink }}>
-                      {t(lang, "referral_copy")}
-                    </button>
-                  </div>
+                  <>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="rounded-lg border px-4 py-2 text-lg font-semibold tracking-wide" style={{ borderColor: C.gold, color: C.gold, fontFamily: "'IBM Plex Mono', monospace" }}>
+                        {myReferralCode}
+                      </span>
+                      <button onClick={copyReferralCode}
+                        className="clesch-focus rounded-lg px-3 py-2 text-xs font-semibold text-white" style={{ background: C.ink }}>
+                        {t(lang, "referral_copy")}
+                      </button>
+                      <button onClick={shareReferralCode}
+                        className="clesch-focus flex items-center gap-1 rounded-lg border px-3 py-2 text-xs font-semibold" style={{ borderColor: C.line, color: C.ink }}>
+                        <Share2 size={13} /> {t(lang, "referral_share")}
+                      </button>
+                    </div>
+                    {referralCopied && (
+                      <p className="mt-1.5 flex items-center gap-1 text-xs" style={{ color: C.green }}>
+                        <CheckCircle2 size={13} /> {t(lang, "referral_copied")}
+                      </p>
+                    )}
+                    {referralShared && (
+                      <p className="mt-1.5 flex items-center gap-1 text-xs" style={{ color: C.green }}>
+                        <CheckCircle2 size={13} /> {t(lang, "referral_link_copied")}
+                      </p>
+                    )}
+                  </>
                 ) : (
                   <button onClick={getMyReferralCode} disabled={referralCodeLoading}
                     className="clesch-focus mt-3 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" style={{ background: C.gold }}>
