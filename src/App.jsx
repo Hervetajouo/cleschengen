@@ -1210,6 +1210,13 @@ function AddListingForm({ onSubmit, saving, lang }) {
 /* ---------- Dedicated onboarding tab ---------- */
 /* ---------- Country guides ---------- */
 /* ---------- Public journal (blog) ---------- */
+function localizedPost(post, lang) {
+  if (lang === "en" && post.title_en) {
+    return { title: post.title_en, excerpt: post.excerpt_en || post.excerpt, content: post.content_en || post.content };
+  }
+  return { title: post.title, excerpt: post.excerpt, content: post.content };
+}
+
 function JournalList({ posts, loading, lang, onOpen }) {
   return (
     <div>
@@ -1223,15 +1230,18 @@ function JournalList({ posts, loading, lang, onOpen }) {
         <div className="mt-6 rounded-xl border p-8 text-center text-sm" style={{ borderColor: C.line, color: C.slate }}>{t(lang, "journal_empty")}</div>
       ) : (
         <div className="mt-6 space-y-4">
-          {posts.map((p) => (
-            <button key={p.id} onClick={() => onOpen(p)} className="clesch-focus block w-full rounded-xl p-5 text-left transition hover:shadow-md" style={{ background: C.card, border: `1px solid ${C.line}` }}>
-              <p className="text-xs" style={{ color: C.slate, fontFamily: "'IBM Plex Mono', monospace" }}>
-                {new Date(p.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR")}
-              </p>
-              <p className="mt-1 text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{p.title}</p>
-              {p.excerpt && <p className="mt-1 text-sm" style={{ color: C.slate }}>{p.excerpt}</p>}
-            </button>
-          ))}
+          {posts.map((p) => {
+            const lp = localizedPost(p, lang);
+            return (
+              <button key={p.id} onClick={() => onOpen(p)} className="clesch-focus block w-full rounded-xl p-5 text-left transition hover:shadow-md" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+                <p className="text-xs" style={{ color: C.slate, fontFamily: "'IBM Plex Mono', monospace" }}>
+                  {new Date(p.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR")}
+                </p>
+                <p className="mt-1 text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{lp.title}</p>
+                {lp.excerpt && <p className="mt-1 text-sm" style={{ color: C.slate }}>{lp.excerpt}</p>}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -1239,6 +1249,7 @@ function JournalList({ posts, loading, lang, onOpen }) {
 }
 
 function JournalPostView({ post, lang, onBack }) {
+  const lp = localizedPost(post, lang);
   return (
     <div className="mx-auto max-w-2xl">
       <button onClick={onBack} className="clesch-focus flex items-center gap-1.5 text-sm font-medium" style={{ color: C.slate }}>
@@ -1247,8 +1258,8 @@ function JournalPostView({ post, lang, onBack }) {
       <p className="mt-4 text-xs" style={{ color: C.slate, fontFamily: "'IBM Plex Mono', monospace" }}>
         {new Date(post.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR")}
       </p>
-      <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{post.title}</h1>
-      <div className="mt-4 whitespace-pre-line text-sm leading-relaxed" style={{ color: C.ink }}>{post.content}</div>
+      <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{lp.title}</h1>
+      <div className="mt-4 whitespace-pre-line text-sm leading-relaxed" style={{ color: C.ink }}>{lp.content}</div>
     </div>
   );
 }
@@ -1550,15 +1561,18 @@ function HowItWorks({ goTo, lang, journalPosts, onOpenPost, partners }) {
             </button>
           </div>
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
-            {journalPosts.slice(0, 3).map((p) => (
-              <button key={p.id} onClick={() => onOpenPost(p)} className="clesch-focus block rounded-xl p-4 text-left transition hover:shadow-md" style={{ background: C.card, border: `1px solid ${C.line}` }}>
-                <p className="text-xs" style={{ color: C.slate, fontFamily: "'IBM Plex Mono', monospace" }}>
-                  {new Date(p.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR")}
-                </p>
-                <p className="mt-1 text-sm font-semibold" style={{ color: C.ink }}>{p.title}</p>
-                {p.excerpt && <p className="mt-1 text-xs" style={{ color: C.slate }}>{p.excerpt}</p>}
-              </button>
-            ))}
+            {journalPosts.slice(0, 3).map((p) => {
+              const lp = localizedPost(p, lang);
+              return (
+                <button key={p.id} onClick={() => onOpenPost(p)} className="clesch-focus block rounded-xl p-4 text-left transition hover:shadow-md" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+                  <p className="text-xs" style={{ color: C.slate, fontFamily: "'IBM Plex Mono', monospace" }}>
+                    {new Date(p.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR")}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold" style={{ color: C.ink }}>{lp.title}</p>
+                  {lp.excerpt && <p className="mt-1 text-xs" style={{ color: C.slate }}>{lp.excerpt}</p>}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1907,6 +1921,9 @@ function AdminPanel({ lang }) {
   const [postTitle, setPostTitle] = useState("");
   const [postExcerpt, setPostExcerpt] = useState("");
   const [postContent, setPostContent] = useState("");
+  const [postTitleEn, setPostTitleEn] = useState("");
+  const [postExcerptEn, setPostExcerptEn] = useState("");
+  const [postContentEn, setPostContentEn] = useState("");
   const [postSaving, setPostSaving] = useState(false);
   const [postError, setPostError] = useState("");
 
@@ -1925,9 +1942,8 @@ function AdminPanel({ lang }) {
 
   function resetPostForm() {
     setEditingPostId(null);
-    setPostTitle("");
-    setPostExcerpt("");
-    setPostContent("");
+    setPostTitle(""); setPostExcerpt(""); setPostContent("");
+    setPostTitleEn(""); setPostExcerptEn(""); setPostContentEn("");
     setPostError("");
   }
 
@@ -1936,6 +1952,9 @@ function AdminPanel({ lang }) {
     setPostTitle(p.title);
     setPostExcerpt(p.excerpt || "");
     setPostContent(p.content);
+    setPostTitleEn(p.title_en || "");
+    setPostExcerptEn(p.excerpt_en || "");
+    setPostContentEn(p.content_en || "");
     setPostError("");
   }
 
@@ -1946,17 +1965,18 @@ function AdminPanel({ lang }) {
     }
     setPostSaving(true);
     setPostError("");
+    const payload = {
+      title: postTitle.trim(), excerpt: postExcerpt.trim() || null, content: postContent.trim(),
+      title_en: postTitleEn.trim() || null, excerpt_en: postExcerptEn.trim() || null, content_en: postContentEn.trim() || null,
+    };
     if (editingPostId) {
       const { error } = await supabase.from("journal_posts").update({
-        title: postTitle.trim(), excerpt: postExcerpt.trim() || null, content: postContent.trim(),
-        updated_at: new Date().toISOString(),
+        ...payload, updated_at: new Date().toISOString(),
       }).eq("id", editingPostId);
       if (error) { setPostError(error.message); setPostSaving(false); return; }
     } else {
       const slug = `${slugify(postTitle)}-${Date.now().toString(36).slice(-5)}`;
-      const { error } = await supabase.from("journal_posts").insert({
-        slug, title: postTitle.trim(), excerpt: postExcerpt.trim() || null, content: postContent.trim(),
-      });
+      const { error } = await supabase.from("journal_posts").insert({ slug, ...payload });
       if (error) { setPostError(error.message); setPostSaving(false); return; }
     }
     setPostSaving(false);
@@ -2216,12 +2236,24 @@ function AdminPanel({ lang }) {
 
       <div className="mt-4 rounded-xl p-4" style={{ background: C.card, border: `1px solid ${C.line}` }}>
         <p className="text-sm font-semibold" style={{ color: C.ink }}>{editingPostId ? t(lang, "admin_journal_edit") : t(lang, "admin_journal_new")}</p>
+
+        <p className="mt-3 text-xs font-semibold uppercase tracking-wide" style={{ color: C.gold }}>{t(lang, "admin_journal_lang_fr")}</p>
         <input value={postTitle} onChange={(e) => setPostTitle(e.target.value)} placeholder={t(lang, "admin_journal_title_ph")}
           className="clesch-focus mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
         <input value={postExcerpt} onChange={(e) => setPostExcerpt(e.target.value)} placeholder={t(lang, "admin_journal_excerpt_ph")}
           className="clesch-focus mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
         <textarea value={postContent} onChange={(e) => setPostContent(e.target.value)} rows={6} placeholder={t(lang, "admin_journal_content_ph")}
           className="clesch-focus mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+
+        <p className="mt-4 text-xs font-semibold uppercase tracking-wide" style={{ color: C.gold }}>{t(lang, "admin_journal_lang_en")}</p>
+        <p className="mt-0.5 text-xs" style={{ color: C.slate }}>{t(lang, "admin_journal_en_note")}</p>
+        <input value={postTitleEn} onChange={(e) => setPostTitleEn(e.target.value)} placeholder={t(lang, "admin_journal_title_ph")}
+          className="clesch-focus mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+        <input value={postExcerptEn} onChange={(e) => setPostExcerptEn(e.target.value)} placeholder={t(lang, "admin_journal_excerpt_ph")}
+          className="clesch-focus mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+        <textarea value={postContentEn} onChange={(e) => setPostContentEn(e.target.value)} rows={6} placeholder={t(lang, "admin_journal_content_ph")}
+          className="clesch-focus mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+
         {postError && <p className="mt-1 text-xs" style={{ color: C.rust }}>{postError}</p>}
         <div className="mt-2 flex gap-2">
           <button disabled={postSaving} onClick={savePost}

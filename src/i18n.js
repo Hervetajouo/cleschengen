@@ -65,6 +65,8 @@ const fr = {
   admin_journal_delete_confirm: "Supprimer définitivement cet article ?",
   admin_journal_empty: "Aucun article pour l'instant.", admin_journal_published: "Publié", admin_journal_draft: "Brouillon",
   admin_journal_unpublish: "Dépublier", admin_journal_publish_toggle: "Publier",
+  admin_journal_lang_fr: "Version française", admin_journal_lang_en: "Version anglaise (facultative)",
+  admin_journal_en_note: "Si laissée vide, la version française s'affichera aussi pour les visiteurs en anglais.",
 
   history_title: "Mes contacts débloqués",
   history_subtitle: "Ces contacts restent enregistrés sur ton compte, même si tu reviens plus tard.",
@@ -328,6 +330,8 @@ const en = {
   admin_journal_delete_confirm: "Permanently delete this article?",
   admin_journal_empty: "No articles yet.", admin_journal_published: "Published", admin_journal_draft: "Draft",
   admin_journal_unpublish: "Unpublish", admin_journal_publish_toggle: "Publish",
+  admin_journal_lang_fr: "French version", admin_journal_lang_en: "English version (optional)",
+  admin_journal_en_note: "If left empty, the French version will also show to English-speaking visitors.",
 
   history_title: "My unlocked contacts",
   history_subtitle: "These contacts stay saved to your account, even if you come back later.",
