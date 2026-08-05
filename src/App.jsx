@@ -2597,6 +2597,7 @@ function ContactModal({ defaultEmail, onClose, lang }) {
 function EditListingModal({ listing, onClose, onSaved, lang }) {
   const d = listing.details || {};
   const [form, setForm] = useState({
+    owner: listing.owner_name || "", phone: listing.phone || "",
     type: listing.type, transaction: listing.transaction, country: listing.country,
     city: listing.city, address: listing.address || "", price: listing.price,
     desc: listing.description, availableFrom: listing.available_from || "",
@@ -2654,6 +2655,7 @@ function EditListingModal({ listing, onClose, onSaved, lang }) {
       }
 
       const { error: err } = await supabase.from("listings").update({
+        owner_name: form.owner.trim(), phone: form.phone.trim(),
         type: form.type, transaction: form.transaction, country: form.country,
         city: form.city, address: form.address, price: Number(form.price),
         description: form.desc, photos, details, lat, lng,
@@ -2678,6 +2680,16 @@ function EditListingModal({ listing, onClose, onSaved, lang }) {
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_owner_name")}</label>
+            <input value={form.owner} onChange={(e) => set("owner", e.target.value)}
+              className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+          </div>
+          <div>
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_phone")}</label>
+            <input value={form.phone} onChange={(e) => set("phone", e.target.value)}
+              className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+          </div>
           <div>
             <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_type")}</label>
             <Select value={form.type} onChange={(e) => set("type", e.target.value)}>
