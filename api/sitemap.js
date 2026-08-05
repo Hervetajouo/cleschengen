@@ -37,9 +37,9 @@ export default async function handler(req, res) {
   const urls = [
     { loc: `${SITE}/`, priority: "1.0" },
     { loc: `${SITE}/journal`, priority: "0.7" },
-    ...listingIds.map((l) => ({ loc: `${SITE}/annonce/${l.id}`, lastmod: l.created_at, priority: "0.8" })),
-    ...posts.map((p) => ({ loc: `${SITE}/journal/${p.slug}`, lastmod: p.updated_at, priority: "0.6" })),
-  ];
+    ...listingIds.filter((l) => l.id).map((l) => ({ loc: `${SITE}/annonce/${l.id}`, lastmod: l.created_at, priority: "0.8" })),
+    ...posts.filter((p) => p.slug).map((p) => ({ loc: `${SITE}/journal/${p.slug}`, lastmod: p.updated_at, priority: "0.6" })),
+  ].filter((u) => u.loc);
 
   const escape = (s) => String(s).replace(/&/g, "&amp;");
 
