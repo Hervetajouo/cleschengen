@@ -69,6 +69,10 @@ const TRANSACTIONS = {
   vente: { label: "Vente", unit: { maison: "", chambre: "", voiture: "", appareils: "" } },
 };
 
+function isOwnerRole(role) {
+  return role === "bailleur" || role === "agence";
+}
+
 function priceUnit(lang, transaction, type) {
   if (transaction === "vente") return "";
   return type === "voiture" || type === "appareils" ? t(lang, "unit_day") : t(lang, "unit_month");
@@ -739,6 +743,161 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
 }
 
 /* ---------- Add listing form ---------- */
+/* ---------- CSV parsing (simple RFC4180-style, no external dependency) ---------- */
+function parseCsv(text) {
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], next = text[i + 1];
+    if (inQuotes) {
+      if (c === '"' && next === '"') { field += '"'; i++; }
+      else if (c === '"') { inQuotes = false; }
+      else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ",") { row.push(field); field = ""; }
+      else if (c === "\n" || c === "\r") {
+        if (field !== "" || row.length > 0) { row.push(field); rows.push(row); row = []; field = ""; }
+        if (c === "\r" && next === "\n") i++;
+      } else field += c;
+    }
+  }
+  if (field !== "" || row.length > 0) { row.push(field); rows.push(row); }
+  if (rows.length === 0) return [];
+  const headers = rows[0].map((h) => h.trim().toLowerCase());
+  return rows.slice(1).filter((r) => r.some((c) => c.trim() !== "")).map((r) => {
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = (r[idx] || "").trim(); });
+    return obj;
+  });
+}
+
+/* ---------- Bulk CSV import (agency accounts only) ---------- */
+function CsvImportPanel({ session, lang, onImported }) {
+  const [rows, setRows] = useState([]);
+  const [fileError, setFileError] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [results, setResults] = useState(null); // { success, failed: [{row, reason}] }
+  const fileInputRef = useRef(null);
+
+  function handleFile(fileList) {
+    const file = fileList?.[0];
+    if (!file) return;
+    setResults(null);
+    setFileError("");
+    const reader = new FileReader();
+    reader.onload = () => {
+      const parsed = parseCsv(String(reader.result));
+      if (parsed.length === 0) { setFileError(t(lang, "csv_empty")); setRows([]); return; }
+      setRows(parsed);
+    };
+    reader.onerror = () => setFileError(t(lang, "csv_read_error"));
+    reader.readAsText(file);
+  }
+
+  async function runImport() {
+    setImporting(true);
+    setProgress({ done: 0, total: rows.length });
+    const failed = [];
+    let success = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      try {
+        if (!TYPES[r.type]) throw new Error(t(lang, "csv_err_type"));
+        if (!TRANSACTIONS[r.transaction]) throw new Error(t(lang, "csv_err_transaction"));
+        if (!r.city || !r.address || !r.price || !r.description || !r.owner_name || !r.phone) {
+          throw new Error(t(lang, "csv_err_required"));
+        }
+        const price = Number(r.price);
+        if (!price || price <= 0) throw new Error(t(lang, "csv_err_price"));
+
+        let lat = null, lng = null;
+        try {
+          const { data: geo } = await supabase.functions.invoke("geocode-address", {
+            body: { address: r.address, city: r.city, country: r.country || "" },
+          });
+          lat = geo?.lat ?? null;
+          lng = geo?.lng ?? null;
+        } catch { /* la géolocalisation n'est pas bloquante */ }
+
+        const id = "SCH-" + Date.now().toString(36).toUpperCase().slice(-5) + i;
+        const details = {};
+        if (r.bedrooms) details.bedrooms = r.bedrooms;
+        if (r.bathrooms) details.bathrooms = r.bathrooms;
+
+        const { error: insertErr } = await supabase.from("listings").insert({
+          id, owner_id: session.user.id, type: r.type, transaction: r.transaction,
+          country: r.country || "", city: r.city, address: r.address, price,
+          owner_name: r.owner_name, phone: r.phone, description: r.description,
+          photos: [], details, available_from: r.availablefrom || null,
+        });
+        if (insertErr) throw insertErr;
+        success++;
+      } catch (err) {
+        failed.push({ row: i + 2, reason: err.message || String(err) }); // +2 = ligne réelle dans le fichier (en-tête + index 1-based)
+      }
+      setProgress({ done: i + 1, total: rows.length });
+      // Respecte la limite de Nominatim (≈1 requête/seconde) entre deux annonces.
+      await new Promise((res) => setTimeout(res, 1100));
+    }
+
+    setResults({ success, failed });
+    setImporting(false);
+    setRows([]);
+    onImported();
+  }
+
+  return (
+    <div>
+      <p className="text-base font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "csv_title")}</p>
+      <p className="mt-1 text-sm" style={{ color: C.slate }}>{t(lang, "csv_subtitle")}</p>
+      <p className="mt-2 rounded-lg p-3 text-xs" style={{ background: C.paper, color: C.slate, fontFamily: "'IBM Plex Mono', monospace" }}>
+        type,transaction,country,city,address,price,description,owner_name,phone,bedrooms,bathrooms,availableFrom
+      </p>
+      <p className="mt-1 text-xs" style={{ color: C.slate }}>{t(lang, "csv_columns_note")}</p>
+
+      <label className="clesch-focus mt-3 flex w-fit cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium" style={{ borderColor: C.line, color: C.ink }}>
+        <UploadCloud size={15} /> {t(lang, "csv_choose_file")}
+        <input ref={fileInputRef} type="file" accept=".csv,text/csv" hidden onChange={(e) => { handleFile(e.target.files); e.target.value = ""; }} />
+      </label>
+
+      {fileError && <p className="mt-2 text-xs" style={{ color: C.rust }}>{fileError}</p>}
+
+      {rows.length > 0 && !importing && !results && (
+        <div className="mt-3">
+          <p className="text-sm" style={{ color: C.ink }}>{t(lang, "csv_rows_found").replace("{n}", rows.length)}</p>
+          <button onClick={runImport} className="clesch-focus mt-2 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: C.ink }}>
+            {t(lang, "csv_start_import")}
+          </button>
+        </div>
+      )}
+
+      {importing && (
+        <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: C.slate }}>
+          <Loader2 size={16} className="animate-spin" /> {t(lang, "csv_importing").replace("{done}", progress.done).replace("{total}", progress.total)}
+        </div>
+      )}
+
+      {results && (
+        <div className="mt-3 rounded-lg p-3" style={{ background: results.failed.length ? "#F7EAE6" : "#EAF3EE" }}>
+          <p className="text-sm font-medium" style={{ color: results.failed.length ? C.rust : C.green }}>
+            {t(lang, "csv_done").replace("{success}", results.success).replace("{failed}", results.failed.length)}
+          </p>
+          {results.failed.length > 0 && (
+            <ul className="mt-1.5 list-disc pl-4 text-xs" style={{ color: C.rust }}>
+              {results.failed.map((f, idx) => (
+                <li key={idx}>{t(lang, "csv_line")} {f.row}: {f.reason}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AddListingForm({ onSubmit, saving, lang }) {
   const empty = {
     owner: "", phone: "", type: "maison", transaction: "location", country: COUNTRIES[0], city: "",
@@ -1669,7 +1828,7 @@ function AuthModal({ mode: initialMode, onClose, lang }) {
           {mode === "signup" && (
             <div>
               <label className="text-xs font-medium" style={{ color: C.slate }}>{lang === "en" ? "I am…" : "Je suis…"}</label>
-              <div className="mt-1 grid grid-cols-2 gap-2">
+              <div className="mt-1 grid grid-cols-3 gap-2">
                 <button type="button" onClick={() => setRole("chercheur")}
                   className="clesch-focus rounded-lg border px-3 py-2 text-sm font-medium"
                   style={{ borderColor: role === "chercheur" ? C.gold : C.line, background: role === "chercheur" ? "#FBF3E7" : "transparent", color: C.ink }}>
@@ -1680,8 +1839,13 @@ function AuthModal({ mode: initialMode, onClose, lang }) {
                   style={{ borderColor: role === "bailleur" ? C.gold : C.line, background: role === "bailleur" ? "#FBF3E7" : "transparent", color: C.ink }}>
                   {t(lang, "auth_role_landlord")}
                 </button>
+                <button type="button" onClick={() => setRole("agence")}
+                  className="clesch-focus rounded-lg border px-3 py-2 text-sm font-medium"
+                  style={{ borderColor: role === "agence" ? C.gold : C.line, background: role === "agence" ? "#FBF3E7" : "transparent", color: C.ink }}>
+                  {t(lang, "auth_role_agency")}
+                </button>
               </div>
-              {role === "bailleur" && (
+              {(role === "bailleur" || role === "agence") && (
                 <p className="mt-1.5 text-xs" style={{ color: C.slate }}>
                   {t(lang, "auth_role_note")}
                 </p>
@@ -2489,7 +2653,7 @@ function AdminPanel({ lang }) {
                   <td className="px-4 py-2.5" style={{ color: C.ink }}>{a.email}</td>
                   <td className="px-4 py-2.5" style={{ color: C.ink }}>{t(lang, `role_${a.role}`)}</td>
                   <td className="px-4 py-2.5">
-                    {a.role === "bailleur" ? (
+                    {isOwnerRole(a.role) ? (
                       <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{
                         background: a.verification_status === "verified" ? "#EAF3EE" : a.verification_status === "rejected" ? "#F7EAE6" : "#FBF3E7",
                         color: a.verification_status === "verified" ? C.green : a.verification_status === "rejected" ? C.rust : C.gold,
@@ -3482,7 +3646,7 @@ export default function CleSchengen() {
   const unlockedList = listings.filter((l) => unlocked[l.id]);
   const favoritesList = listings.filter((l) => favorites[l.id]);
   const isAdmin = profile?.role === "admin";
-  const isVerifiedLandlord = (profile?.role === "bailleur" && profile?.verification_status === "verified") || hasActiveSubscription;
+  const isVerifiedLandlord = (isOwnerRole(profile?.role) && profile?.verification_status === "verified") || hasActiveSubscription;
 
   const NAV_ITEMS = [
     ["how", t(lang, "nav_how")],
@@ -3527,14 +3691,14 @@ export default function CleSchengen() {
               <span className="ml-0.5 rounded-full px-1.5 text-xs" style={{ background: "rgba(255,255,255,0.2)" }}>{unlockedList.length}</span>
             )}
           </button>
-          {profile?.role === "bailleur" && (
+          {isOwnerRole(profile?.role) && (
             <button onClick={() => setTab("dashboard")}
               className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium"
               style={{ background: tab === "dashboard" ? C.gold : "transparent" }}>
               {t(lang, "nav_dashboard")}
             </button>
           )}
-          {profile?.role === "bailleur" && (
+          {isOwnerRole(profile?.role) && (
             <button onClick={() => setTab("messages")}
               className="clesch-focus flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium"
               style={{ background: tab === "messages" ? C.gold : "transparent" }}>
@@ -3798,6 +3962,11 @@ export default function CleSchengen() {
                 <button onClick={() => setTab("premium")} className="clesch-focus mt-4 flex items-center gap-1.5 text-sm font-medium" style={{ color: C.gold }}>
                   <Sparkles size={14} /> {t(lang, "add_premium_cta")}
                 </button>
+                {profile?.role === "agence" && (
+                  <div className="mt-6 rounded-2xl p-6" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+                    <CsvImportPanel session={session} lang={lang} onImported={loadListings} />
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -3993,9 +4162,9 @@ export default function CleSchengen() {
           </div>
         )}
 
-        {tab === "dashboard" && profile?.role === "bailleur" && <OwnerDashboard lang={lang} />}
+        {tab === "dashboard" && isOwnerRole(profile?.role) && <OwnerDashboard lang={lang} />}
 
-        {tab === "messages" && profile?.role === "bailleur" && <OwnerMessages lang={lang} />}
+        {tab === "messages" && isOwnerRole(profile?.role) && <OwnerMessages lang={lang} />}
 
         {tab === "admin" && isAdmin && <AdminPanel lang={lang} />}
       </main>
