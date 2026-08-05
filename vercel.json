@@ -1,5 +1,8 @@
 {
   "rewrites": [
-    { "source": "/annonce/:id", "destination": "/api/annonce?id=:id" }
+    { "source": "/annonce/:id", "destination": "/api/annonce?id=:id" },
+    { "source": "/journal", "destination": "/index.html" },
+    { "source": "/journal/:slug", "destination": "/api/journal?slug=:slug" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" }
   ]
 }

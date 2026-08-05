@@ -3396,6 +3396,17 @@ export default function CleSchengen() {
   const [journalPosts, setJournalPosts] = useState([]);
   const [journalLoading, setJournalLoading] = useState(true);
   const [activeJournalPost, setActiveJournalPost] = useState(null);
+
+  function openJournalPost(p) {
+    setActiveJournalPost(p);
+    setTab("journal");
+    window.history.pushState(null, "", `/journal/${p.slug}`);
+  }
+
+  function closeJournalPost() {
+    setActiveJournalPost(null);
+    window.history.pushState(null, "", "/journal");
+  }
   const loadJournalPosts = useCallback(async () => {
     setJournalLoading(true);
     const { data } = await supabase.from("journal_posts").select("*").eq("published", true).order("created_at", { ascending: false });
@@ -3543,6 +3554,22 @@ export default function CleSchengen() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listings]);
+
+  /* ---- Deep link support: /journal (list) or /journal/:slug (one article) ---- */
+  useEffect(() => {
+    if (window.location.pathname === "/journal") setTab("journal");
+  }, []);
+
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/journal\/(.+)$/);
+    if (!match || journalPosts.length === 0 || activeJournalPost) return;
+    const found = journalPosts.find((p) => p.slug === match[1]);
+    if (found) {
+      setActiveJournalPost(found);
+      setTab("journal");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [journalPosts]);
   useEffect(() => { loadUnlocks(session?.user?.id); }, [session, loadUnlocks]);
   useEffect(() => { loadFavorites(session?.user?.id); }, [session, loadFavorites]);
   useEffect(() => { loadSavedSearches(session?.user?.id); }, [session, loadSavedSearches]);
@@ -3767,7 +3794,7 @@ export default function CleSchengen() {
             goTo={setTab}
             lang={lang}
             journalPosts={journalPosts}
-            onOpenPost={(p) => { setActiveJournalPost(p); setTab("journal"); }}
+            onOpenPost={openJournalPost}
             partners={publicPartners}
           />
         )}
@@ -3986,9 +4013,9 @@ export default function CleSchengen() {
 
         {tab === "journal" && (
           activeJournalPost ? (
-            <JournalPostView post={activeJournalPost} lang={lang} onBack={() => setActiveJournalPost(null)} />
+            <JournalPostView post={activeJournalPost} lang={lang} onBack={closeJournalPost} />
           ) : (
-            <JournalList posts={journalPosts} loading={journalLoading} lang={lang} onOpen={setActiveJournalPost} />
+            <JournalList posts={journalPosts} loading={journalLoading} lang={lang} onOpen={openJournalPost} />
           )
         )}
 
