@@ -880,7 +880,7 @@ function AddListingForm({ onSubmit, saving, lang }) {
 
     const listing = {
       id, ...form, price: Number(form.price), verified: true, photos, details,
-      lat, lng, availableFrom: form.type === "maison" && form.transaction === "location" ? form.availableFrom : null,
+      lat, lng, availableFrom: form.transaction === "location" ? form.availableFrom : null,
     };
     setSaveError(false);
     const ok = await onSubmit(listing);
@@ -1034,14 +1034,6 @@ function AddListingForm({ onSubmit, saving, lang }) {
                 {t(lang, "add_living_room")}
               </label>
             )}
-
-            {form.transaction === "location" && (
-              <div className="mt-2.5">
-                <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_available_from")}</label>
-                <input type="date" value={form.availableFrom} onChange={(e) => set("availableFrom", e.target.value)}
-                  className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line, background: C.card }} />
-              </div>
-            )}
           </div>
         )}
 
@@ -1071,6 +1063,14 @@ function AddListingForm({ onSubmit, saving, lang }) {
               <option value="electromenager">{t(lang, "appliance_electromenager")}</option>
               <option value="autre">{t(lang, "appliance_autre")}</option>
             </Select>
+          </div>
+        )}
+
+        {form.transaction === "location" && (
+          <div className="col-span-2">
+            <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_available_from")}</label>
+            <input type="date" value={form.availableFrom} onChange={(e) => set("availableFrom", e.target.value)}
+              className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line, background: C.card }} />
           </div>
         )}
 
@@ -2657,7 +2657,7 @@ function EditListingModal({ listing, onClose, onSaved, lang }) {
         type: form.type, transaction: form.transaction, country: form.country,
         city: form.city, address: form.address, price: Number(form.price),
         description: form.desc, photos, details, lat, lng,
-        available_from: form.type === "maison" && form.transaction === "location" ? (form.availableFrom || null) : null,
+        available_from: form.transaction === "location" ? (form.availableFrom || null) : null,
       }).eq("id", listing.id);
       if (err) throw err;
       setSaved(true);
@@ -2750,10 +2750,6 @@ function EditListingModal({ listing, onClose, onSaved, lang }) {
                   placeholder={t(lang, "add_bathrooms")}
                   className="clesch-focus rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line, background: C.card }} />
               </div>
-              {form.transaction === "location" && (
-                <input type="date" value={form.availableFrom} onChange={(e) => set("availableFrom", e.target.value)}
-                  className="clesch-focus mt-2.5 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line, background: C.card }} />
-              )}
             </div>
           )}
 
@@ -2779,6 +2775,14 @@ function EditListingModal({ listing, onClose, onSaved, lang }) {
                 <option value="electromenager">{t(lang, "appliance_electromenager")}</option>
                 <option value="autre">{t(lang, "appliance_autre")}</option>
               </Select>
+            </div>
+          )}
+
+          {form.transaction === "location" && (
+            <div className="col-span-2">
+              <label className="text-xs font-medium" style={{ color: C.slate }}>{t(lang, "add_available_from")}</label>
+              <input type="date" value={form.availableFrom} onChange={(e) => set("availableFrom", e.target.value)}
+                className="clesch-focus mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line, background: C.card }} />
             </div>
           )}
 
