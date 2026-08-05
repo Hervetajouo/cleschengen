@@ -1407,8 +1407,70 @@ function JournalList({ posts, loading, lang, onOpen }) {
   );
 }
 
-function JournalPostView({ post, lang, onBack }) {
+function JournalPostView({ post, lang, onBack, session, onRequireAuth }) {
   const lp = localizedPost(post, lang);
+
+  const [likeCount, setLikeCount] = useState(0);
+  const [liked, setLiked] = useState(false);
+  const [likeBusy, setLikeBusy] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [commentText, setCommentText] = useState("");
+  const [commentSaving, setCommentSaving] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+
+  const loadSocial = useCallback(async () => {
+    const { count } = await supabase.from("journal_likes").select("*", { count: "exact", head: true }).eq("post_id", post.id);
+    setLikeCount(count || 0);
+    if (session) {
+      const { data } = await supabase.from("journal_likes").select("post_id").eq("post_id", post.id).eq("user_id", session.user.id).maybeSingle();
+      setLiked(!!data);
+    } else {
+      setLiked(false);
+    }
+    setCommentsLoading(true);
+    const { data: cRows } = await supabase.from("journal_comments").select("*").eq("post_id", post.id).order("created_at", { ascending: true });
+    setComments(cRows || []);
+    setCommentsLoading(false);
+  }, [post.id, session]);
+
+  useEffect(() => { loadSocial(); }, [loadSocial]);
+
+  async function toggleLike() {
+    if (!session) { onRequireAuth(); return; }
+    setLikeBusy(true);
+    if (liked) {
+      await supabase.from("journal_likes").delete().eq("post_id", post.id).eq("user_id", session.user.id);
+    } else {
+      await supabase.from("journal_likes").insert({ post_id: post.id, user_id: session.user.id });
+    }
+    setLikeBusy(false);
+    loadSocial();
+  }
+
+  async function submitComment() {
+    if (!session) { onRequireAuth(); return; }
+    if (!commentText.trim()) return;
+    setCommentSaving(true);
+    const label = session.user.email.split("@")[0].slice(0, 3) + "***";
+    const { error } = await supabase.from("journal_comments").insert({
+      post_id: post.id, user_id: session.user.id, author_label: label, comment: commentText.trim(),
+    });
+    setCommentSaving(false);
+    if (!error) { setCommentText(""); loadSocial(); }
+  }
+
+  function shareArticle() {
+    const url = `${window.location.origin}/journal/${post.slug}`;
+    if (navigator.share) {
+      navigator.share({ title: lp.title, url }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(url).then(null, () => {});
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 1800);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-2xl">
       <button onClick={onBack} className="clesch-focus flex items-center gap-1.5 text-sm font-medium" style={{ color: C.slate }}>
@@ -1419,6 +1481,47 @@ function JournalPostView({ post, lang, onBack }) {
       </p>
       <h1 className="mt-1 text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{lp.title}</h1>
       <div className="mt-4 whitespace-pre-line text-sm leading-relaxed" style={{ color: C.ink }}>{lp.content}</div>
+
+      <div className="mt-6 flex items-center gap-3 border-t pt-4" style={{ borderColor: C.line }}>
+        <button onClick={toggleLike} disabled={likeBusy} className="clesch-focus flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium disabled:opacity-60"
+          style={{ borderColor: liked ? C.rust : C.line, color: liked ? C.rust : C.ink }}>
+          <Heart size={15} fill={liked ? C.rust : "none"} /> {likeCount}
+        </button>
+        <button onClick={shareArticle} className="clesch-focus flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium" style={{ borderColor: C.line, color: C.ink }}>
+          <Share2 size={15} /> {t(lang, "journal_share")}
+        </button>
+        {shareCopied && <span className="text-xs" style={{ color: C.green }}>{t(lang, "modal_link_copied")}</span>}
+      </div>
+
+      <div className="mt-6">
+        <p className="text-sm font-semibold" style={{ color: C.ink }}>{t(lang, "journal_comments_title")} ({comments.length})</p>
+
+        {commentsLoading ? (
+          <div className="mt-2 flex items-center gap-2 text-sm" style={{ color: C.slate }}><Loader2 size={15} className="animate-spin" /> {t(lang, "admin_loading")}</div>
+        ) : comments.length === 0 ? (
+          <p className="mt-2 text-sm" style={{ color: C.slate }}>{t(lang, "journal_no_comments")}</p>
+        ) : (
+          <div className="mt-2 space-y-2">
+            {comments.map((c) => (
+              <div key={c.id} className="rounded-lg p-3" style={{ background: C.paper }}>
+                <p className="text-xs font-medium" style={{ color: C.slate }}>{c.author_label} · {new Date(c.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR")}</p>
+                <p className="mt-0.5 text-sm" style={{ color: C.ink }}>{c.comment}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-3 flex gap-2">
+          <input value={commentText} onChange={(e) => setCommentText(e.target.value)}
+            placeholder={session ? t(lang, "journal_comment_ph") : t(lang, "journal_comment_login")}
+            onFocus={() => { if (!session) onRequireAuth(); }}
+            className="clesch-focus flex-1 rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: C.line }} />
+          <button disabled={commentSaving} onClick={submitComment}
+            className="clesch-focus rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" style={{ background: C.ink }}>
+            {commentSaving ? <Loader2 size={15} className="animate-spin" /> : t(lang, "journal_comment_send")}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -4013,7 +4116,7 @@ export default function CleSchengen() {
 
         {tab === "journal" && (
           activeJournalPost ? (
-            <JournalPostView post={activeJournalPost} lang={lang} onBack={closeJournalPost} />
+            <JournalPostView post={activeJournalPost} lang={lang} onBack={closeJournalPost} session={session} onRequireAuth={() => setAuthModal("login")} />
           ) : (
             <JournalList posts={journalPosts} loading={journalLoading} lang={lang} onOpen={openJournalPost} />
           )

@@ -50,6 +50,8 @@ const fr = {
 
   nav_journal: "Journal", journal_title: "Journal", journal_subtitle: "Actualités, conseils et nouveautés de CléSchengen.",
   journal_empty: "Aucun article pour l'instant.", journal_back: "Retour au journal", journal_see_all: "Voir tous les articles",
+  journal_share: "Partager", journal_comments_title: "Commentaires", journal_no_comments: "Aucun commentaire pour l'instant, sois le premier !",
+  journal_comment_ph: "Écris un commentaire…", journal_comment_login: "Connecte-toi pour commenter…", journal_comment_send: "Envoyer",
 
   partners_title: "Partenariat",
   admin_partners_title: "Partenaires", admin_partner_new: "Ajouter un partenaire",
@@ -327,6 +329,8 @@ const en = {
 
   nav_journal: "Journal", journal_title: "Journal", journal_subtitle: "News, tips, and updates from CléSchengen.",
   journal_empty: "No articles yet.", journal_back: "Back to journal", journal_see_all: "See all articles",
+  journal_share: "Share", journal_comments_title: "Comments", journal_no_comments: "No comments yet, be the first!",
+  journal_comment_ph: "Write a comment…", journal_comment_login: "Log in to comment…", journal_comment_send: "Send",
 
   partners_title: "Partnerships",
   admin_partners_title: "Partners", admin_partner_new: "Add a partner",
