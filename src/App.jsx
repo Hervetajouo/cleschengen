@@ -340,7 +340,7 @@ function generateLeaseDoc(listing, lang) {
   </html>`;
 }
 
-function downloadLeaseDoc(listing, lang) {
+function downloadLeaseDocWord(listing, lang) {
   const html = generateLeaseDoc(listing, lang);
   const blob = new Blob(["\ufeff", html], { type: "application/msword" });
   const url = URL.createObjectURL(blob);
@@ -351,6 +351,48 @@ function downloadLeaseDoc(listing, lang) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+function downloadLeaseDocPdf(listing, lang) {
+  const html = generateLeaseDoc(listing, lang);
+  const win = window.open("", "_blank");
+  if (!win) return;
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+  win.onload = () => { win.focus(); win.print(); };
+  // Certains navigateurs ne déclenchent pas onload de façon fiable sur un
+  // document généré ainsi : on relance après un court délai par sécurité.
+  setTimeout(() => { win.focus(); win.print(); }, 400);
+}
+
+/* ---------- Small dropdown to choose the lease document format ---------- */
+function LeaseDownloadMenu({ listing, lang, small }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen((o) => !o)}
+        className={`clesch-focus flex items-center gap-1 rounded-lg border font-medium ${small ? "px-2.5 py-1 text-xs" : "w-full justify-center gap-2 py-2.5 text-sm"}`}
+        style={{ borderColor: C.line, color: C.ink }}>
+        <FileDown size={small ? 12 : 15} /> {small ? t(lang, "lease_download_short") : t(lang, "lease_download")}
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 z-20 mt-1 w-40 rounded-lg py-1 shadow-lg" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+            <button onClick={() => { setOpen(false); downloadLeaseDocWord(listing, lang); }}
+              className="clesch-focus block w-full px-3 py-2 text-left text-sm hover:opacity-70" style={{ color: C.ink }}>
+              {t(lang, "lease_format_word")}
+            </button>
+            <button onClick={() => { setOpen(false); downloadLeaseDocPdf(listing, lang); }}
+              className="clesch-focus block w-full px-3 py-2 text-left text-sm hover:opacity-70" style={{ color: C.ink }}>
+              {t(lang, "lease_format_pdf")}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 function formatPrice(p) {
@@ -827,10 +869,9 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
               </p>
 
               {listing.transaction === "location" && (
-                <button onClick={() => downloadLeaseDoc(listing, lang)}
-                  className="clesch-focus mt-3 flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-semibold" style={{ borderColor: C.line, color: C.ink }}>
-                  <FileDown size={15} /> {t(lang, "lease_download")}
-                </button>
+                <div className="mt-3">
+                  <LeaseDownloadMenu listing={listing} lang={lang} />
+                </div>
               )}
 
               <div className="mt-4 rounded-xl p-4" style={{ background: C.paper, border: `1px solid ${C.line}` }}>
@@ -3515,10 +3556,7 @@ function OwnerDashboard({ lang }) {
                   <td className="px-4 py-2.5">
                     <div className="flex flex-wrap items-center justify-end gap-2">
                       {r.transaction === "location" && (
-                        <button onClick={() => downloadLeaseDoc({ ...r, availableFrom: r.available_from }, lang)}
-                          className="clesch-focus flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium" style={{ borderColor: C.line, color: C.ink }}>
-                          <FileDown size={12} /> {t(lang, "lease_download_short")}
-                        </button>
+                        <LeaseDownloadMenu listing={{ ...r, availableFrom: r.available_from }} lang={lang} small />
                       )}
                       <button disabled={boostingId === r.id} onClick={() => boostListing(r.id)}
                         className="clesch-focus flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium disabled:opacity-60" style={{ borderColor: C.gold, color: C.gold }}>
