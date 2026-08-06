@@ -274,6 +274,7 @@ const fr = {
   dash_status: "Statut", dash_active: "En ligne", dash_unavailable: "Indisponible",
   dash_mark_unavailable: "Marquer indisponible", dash_mark_available: "Remettre en ligne",
   dash_boost: "Mettre en avant", dash_boosted: "En avant", dash_boost_error: "Impossible de démarrer le paiement, réessaie.",
+  lease_download: "Télécharger un modèle de bail", lease_download_short: "Modèle de bail",
 
   referral_title: "Parraine un propriétaire ou un chercheur", referral_subtitle: "Partage ton code personnel : la personne qui l'utilise à l'abonnement bénéficie de 20% de réduction sur son premier abonnement Premium.",
   referral_copy: "Copier le code", referral_count: "{n} personne(s) inscrite(s) via ton code.",
@@ -556,6 +557,7 @@ const en = {
   dash_status: "Status", dash_active: "Live", dash_unavailable: "Unavailable",
   dash_mark_unavailable: "Mark unavailable", dash_mark_available: "Make live again",
   dash_boost: "Boost", dash_boosted: "Boosted", dash_boost_error: "Unable to start the payment, try again.",
+  lease_download: "Download a lease template", lease_download_short: "Lease template",
 
   referral_title: "Refer an owner or seeker", referral_subtitle: "Share your personal code: whoever uses it when subscribing gets 20% off their first Premium subscription.",
   referral_copy: "Copy code", referral_count: "{n} people signed up via your code.",

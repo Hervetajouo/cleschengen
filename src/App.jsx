@@ -5,7 +5,7 @@ import {
   ShieldCheck, ChevronDown, KeyRound, ListChecks, Loader2, Info, Building2,
   ImagePlus, Trash2, BadgeCheck, Smartphone, Sparkles, ImageOff, ExternalLink,
   LogOut, UploadCloud, UserCog, ShieldQuestion, Mail, KeySquare, Package, MessageCircleQuestion,
-  Heart, MessageCircle, Share2, Star, Flag,
+  Heart, MessageCircle, Share2, Star, Flag, FileDown,
 } from "lucide-react";
 import { supabase } from "./supabaseClient.js";
 import { LANGS, t } from "./i18n.js";
@@ -233,6 +233,124 @@ function Badge({ children, tone = "ink" }) {
       {children}
     </span>
   );
+}
+
+function generateLeaseDoc(listing, lang) {
+  const isEn = lang === "en";
+  const today = new Date().toLocaleDateString(isEn ? "en-GB" : "fr-FR");
+  const typeLabel = t(lang, `type_${listing.type}`);
+  const priceLine = `${formatPrice(listing.price)} € ${priceUnit(lang, listing.transaction, listing.type)}`;
+
+  const fr = `
+    <h1>MODÈLE DE CONTRAT DE LOCATION</h1>
+    <p style="background:#F7EAE6;border:1px solid #A24936;padding:10px;font-size:12px;">
+      <strong>À lire avant utilisation :</strong> ce document est un modèle générique fourni à titre indicatif par CléSchengen.
+      Il ne remplace pas un contrat conforme à la législation en vigueur dans le pays où se situe le bien
+      (mentions obligatoires, durée minimale, dépôt de garantie autorisé, préavis, etc. varient d'un pays à l'autre).
+      Faites-le vérifier, complété si besoin, par un professionnel du droit local avant toute signature.
+    </p>
+
+    <h2>Entre les parties</h2>
+    <p><strong>Le bailleur (propriétaire) :</strong> ${listing.owner || "……………………………"}, joignable au ${listing.phone || "……………………………"}</p>
+    <p><strong>Le locataire :</strong> ……………………………………………, né(e) le …………………, pièce d'identité n° ……………………………</p>
+
+    <h2>Objet du contrat</h2>
+    <p>Le bailleur donne en location au locataire le bien suivant :</p>
+    <p><strong>Type de bien :</strong> ${typeLabel}<br/>
+    <strong>Adresse :</strong> ${listing.address || "…………………………………………………"}<br/>
+    <strong>Ville, pays :</strong> ${listing.city}, ${listing.country}</p>
+
+    <h2>Durée</h2>
+    <p>Le présent contrat prend effet à compter du ${listing.availableFrom ? new Date(listing.availableFrom).toLocaleDateString("fr-FR") : "……………………"} pour une durée de …………………, renouvelable ou reconductible selon les modalités prévues par la réglementation locale.</p>
+
+    <h2>Loyer et charges</h2>
+    <p><strong>Montant du loyer :</strong> ${priceLine}<br/>
+    <strong>Charges comprises :</strong> ☐ Oui ☐ Non — détail : ……………………………………<br/>
+    <strong>Modalités de paiement :</strong> ……………………………………</p>
+
+    <h2>Dépôt de garantie</h2>
+    <p>Montant : …………………… €, versé à la signature et restitué dans les conditions et délais prévus par la loi applicable, déduction faite des sommes dues le cas échéant.</p>
+
+    <h2>Obligations des parties</h2>
+    <p>Le locataire s'engage à occuper les lieux paisiblement, à les entretenir normalement, et à payer le loyer aux échéances prévues.<br/>
+    Le bailleur s'engage à délivrer un logement décent et à effectuer les réparations qui lui incombent.</p>
+
+    <h2>Résiliation</h2>
+    <p>Chaque partie peut mettre fin au présent contrat en respectant le préavis prévu par la réglementation applicable au lieu de situation du bien.</p>
+
+    <h2>Signatures</h2>
+    <p>Fait à ……………………………, le ${today}</p>
+    <p style="margin-top:40px;">Le bailleur :&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Le locataire :</p>
+
+    <p style="margin-top:30px;font-size:11px;color:#5B6472;">Document généré via CléSchengen — cleschengen.com — annonce ${listing.id}</p>
+  `;
+
+  const en = `
+    <h1>RENTAL LEASE TEMPLATE</h1>
+    <p style="background:#F7EAE6;border:1px solid #A24936;padding:10px;font-size:12px;">
+      <strong>Please read before use:</strong> this document is a generic template provided for guidance by CléSchengen.
+      It does not replace a lease compliant with the law in force in the country where the property is located
+      (mandatory clauses, minimum duration, allowed deposit, notice period, etc. vary from one country to another).
+      Have it reviewed and completed by a local legal professional before signing.
+    </p>
+
+    <h2>Between the parties</h2>
+    <p><strong>The landlord:</strong> ${listing.owner || "……………………………"}, reachable at ${listing.phone || "……………………………"}</p>
+    <p><strong>The tenant:</strong> ……………………………………………, born on …………………, ID document n° ……………………………</p>
+
+    <h2>Subject of the contract</h2>
+    <p>The landlord lets the following property to the tenant:</p>
+    <p><strong>Property type:</strong> ${typeLabel}<br/>
+    <strong>Address:</strong> ${listing.address || "…………………………………………………"}<br/>
+    <strong>City, country:</strong> ${listing.city}, ${listing.country}</p>
+
+    <h2>Duration</h2>
+    <p>This lease takes effect from ${listing.availableFrom ? new Date(listing.availableFrom).toLocaleDateString("en-GB") : "……………………"} for a duration of …………………, renewable in line with local regulations.</p>
+
+    <h2>Rent and charges</h2>
+    <p><strong>Rent amount:</strong> ${priceLine}<br/>
+    <strong>Charges included:</strong> ☐ Yes ☐ No — details: ……………………………………<br/>
+    <strong>Payment terms:</strong> ……………………………………</p>
+
+    <h2>Security deposit</h2>
+    <p>Amount: …………………… €, paid upon signing and returned under the conditions and timeframe set by applicable law, minus any amounts owed if applicable.</p>
+
+    <h2>Obligations of the parties</h2>
+    <p>The tenant agrees to occupy the property peacefully, maintain it in normal condition, and pay rent on the agreed dates.<br/>
+    The landlord agrees to provide decent housing and carry out repairs that are their responsibility.</p>
+
+    <h2>Termination</h2>
+    <p>Either party may terminate this lease subject to the notice period required by the regulations applicable where the property is located.</p>
+
+    <h2>Signatures</h2>
+    <p>Done at ……………………………, on ${today}</p>
+    <p style="margin-top:40px;">The landlord:&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;The tenant:</p>
+
+    <p style="margin-top:30px;font-size:11px;color:#5B6472;">Document generated via CléSchengen — cleschengen.com — listing ${listing.id}</p>
+  `;
+
+  const body = isEn ? en : fr;
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+    <head><meta charset="utf-8"><title>${isEn ? "Lease template" : "Modèle de bail"}</title>
+    <style>
+      body { font-family: Calibri, Arial, sans-serif; font-size: 13px; color: #16233F; line-height: 1.5; }
+      h1 { font-size: 20px; color: #16233F; } h2 { font-size: 15px; color: #A24936; margin-top: 22px; }
+    </style></head>
+    <body>${body}</body>
+  </html>`;
+}
+
+function downloadLeaseDoc(listing, lang) {
+  const html = generateLeaseDoc(listing, lang);
+  const blob = new Blob(["\ufeff", html], { type: "application/msword" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${lang === "en" ? "lease-template" : "modele-bail"}-${listing.id}.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function formatPrice(p) {
@@ -707,6 +825,13 @@ function ListingModal({ listing, unlocked, session, onClose, onUnlock, onRequire
               <p className="mt-3 flex items-center gap-1.5 text-xs" style={{ color: C.slate }}>
                 <Info size={12} /> {t(lang, "modal_history_hint")}
               </p>
+
+              {listing.transaction === "location" && (
+                <button onClick={() => downloadLeaseDoc(listing, lang)}
+                  className="clesch-focus mt-3 flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-semibold" style={{ borderColor: C.line, color: C.ink }}>
+                  <FileDown size={15} /> {t(lang, "lease_download")}
+                </button>
+              )}
 
               <div className="mt-4 rounded-xl p-4" style={{ background: C.paper, border: `1px solid ${C.line}` }}>
                 {reviewSaved ? (
@@ -3389,6 +3514,12 @@ function OwnerDashboard({ lang }) {
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex flex-wrap items-center justify-end gap-2">
+                      {r.transaction === "location" && (
+                        <button onClick={() => downloadLeaseDoc({ ...r, availableFrom: r.available_from }, lang)}
+                          className="clesch-focus flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium" style={{ borderColor: C.line, color: C.ink }}>
+                          <FileDown size={12} /> {t(lang, "lease_download_short")}
+                        </button>
+                      )}
                       <button disabled={boostingId === r.id} onClick={() => boostListing(r.id)}
                         className="clesch-focus flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium disabled:opacity-60" style={{ borderColor: C.gold, color: C.gold }}>
                         <Star size={12} /> {boostingId === r.id ? "…" : t(lang, "dash_boost")}
