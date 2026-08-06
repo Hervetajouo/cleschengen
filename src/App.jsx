@@ -2182,6 +2182,20 @@ function AdminPanel({ lang }) {
     loadPartners();
   }
 
+  const [journalComments, setJournalComments] = useState([]);
+  const [journalCommentsLoading, setJournalCommentsLoading] = useState(true);
+  const loadJournalComments = useCallback(async () => {
+    setJournalCommentsLoading(true);
+    const { data } = await supabase.from("journal_comments").select("*").order("created_at", { ascending: false });
+    setJournalComments(data || []);
+    setJournalCommentsLoading(false);
+  }, []);
+  async function deleteJournalComment(id) {
+    if (!window.confirm(t(lang, "admin_comment_delete_confirm"))) return;
+    await supabase.from("journal_comments").delete().eq("id", id);
+    loadJournalComments();
+  }
+
   const [posts, setPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(true);
   const [editingPostId, setEditingPostId] = useState(null); // null = new post
@@ -2377,7 +2391,7 @@ function AdminPanel({ lang }) {
     loadListingsAdmin();
   }
 
-  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); loadAnalytics(); loadAccounts(); loadReports(); loadRevenue(); loadNewsletterCount(); loadPosts(); loadPartners(); }, [load, loadMessages, loadListingsAdmin, loadAnalytics, loadAccounts, loadReports, loadRevenue, loadNewsletterCount, loadPosts, loadPartners]);
+  useEffect(() => { load(); loadMessages(); loadListingsAdmin(); loadAnalytics(); loadAccounts(); loadReports(); loadRevenue(); loadNewsletterCount(); loadPosts(); loadPartners(); loadJournalComments(); }, [load, loadMessages, loadListingsAdmin, loadAnalytics, loadAccounts, loadReports, loadRevenue, loadNewsletterCount, loadPosts, loadPartners, loadJournalComments]);
 
   async function viewDocument(row) {
     if (!row.id_document_path) return;
@@ -2563,6 +2577,32 @@ function AdminPanel({ lang }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      <h2 className="mt-8 text-lg font-semibold" style={{ fontFamily: "'Fraunces', serif", color: C.ink }}>{t(lang, "admin_comments_title")}</h2>
+      {journalCommentsLoading ? (
+        <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: C.slate }}><Loader2 size={16} className="animate-spin" /> {t(lang, "admin_loading")}</div>
+      ) : journalComments.length === 0 ? (
+        <div className="mt-3 rounded-xl border p-4 text-center text-sm" style={{ borderColor: C.line, color: C.slate }}>{t(lang, "admin_no_comments")}</div>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {journalComments.map((c) => {
+            const relatedPost = posts.find((p) => p.id === c.post_id);
+            return (
+              <div key={c.id} className="flex items-start justify-between gap-2 rounded-xl p-3" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+                <div>
+                  <p className="text-xs" style={{ color: C.slate }}>
+                    {relatedPost ? relatedPost.title : c.post_id} · {c.author_label} · {new Date(c.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR")}
+                  </p>
+                  <p className="mt-0.5 text-sm" style={{ color: C.ink }}>{c.comment}</p>
+                </div>
+                <button onClick={() => deleteJournalComment(c.id)} className="clesch-focus flex flex-shrink-0 items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-white" style={{ background: C.rust }}>
+                  <Trash2 size={12} /> {t(lang, "dash_delete")}
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 

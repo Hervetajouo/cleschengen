@@ -53,6 +53,9 @@ const fr = {
   journal_share: "Partager", journal_comments_title: "Commentaires", journal_no_comments: "Aucun commentaire pour l'instant, sois le premier !",
   journal_comment_ph: "Écris un commentaire…", journal_comment_login: "Connecte-toi pour commenter…", journal_comment_send: "Envoyer",
 
+  admin_comments_title: "Commentaires du journal", admin_no_comments: "Aucun commentaire pour l'instant.",
+  admin_comment_delete_confirm: "Supprimer définitivement ce commentaire ?",
+
   partners_title: "Partenariat",
   admin_partners_title: "Partenaires", admin_partner_new: "Ajouter un partenaire",
   admin_partner_name_ph: "Nom du partenaire", admin_partner_link_ph: "Lien (https://...)",
@@ -331,6 +334,9 @@ const en = {
   journal_empty: "No articles yet.", journal_back: "Back to journal", journal_see_all: "See all articles",
   journal_share: "Share", journal_comments_title: "Comments", journal_no_comments: "No comments yet, be the first!",
   journal_comment_ph: "Write a comment…", journal_comment_login: "Log in to comment…", journal_comment_send: "Send",
+
+  admin_comments_title: "Journal comments", admin_no_comments: "No comments yet.",
+  admin_comment_delete_confirm: "Permanently delete this comment?",
 
   partners_title: "Partnerships",
   admin_partners_title: "Partners", admin_partner_new: "Add a partner",
